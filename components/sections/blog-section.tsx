@@ -5,30 +5,20 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight, BookOpen } from "lucide-react"
 import Link from "next/link"
 import { useWindowScrollInElement } from "use-window-scroll-in-element"
-import { getZennArticles } from "@/lib/zenn"
 import type { ZennArticle } from "@/lib/zenn"
 
-export function BlogSection() {
+interface BlogSectionProps {
+  blogs: ZennArticle[]
+}
+
+export function BlogSection({ blogs }: BlogSectionProps) {
   const [mounted, setMounted] = useState(false)
-  const [blogs, setBlogs] = useState<ZennArticle[]>([])
-  const [loading, setLoading] = useState(true)
   const sectionRef = useRef<HTMLElement>(null)
   const scrollData = useWindowScrollInElement(sectionRef as React.RefObject<HTMLElement>)
   const scrollFraction = scrollData?.fraction?.top ?? 0
 
   useEffect(() => {
     setMounted(true)
-
-    // Zenn APIからブログ記事を取得
-    getZennArticles("dokkiitech")
-      .then((data) => {
-        setBlogs(data.slice(0, 3)) // 最新3件のみ
-        setLoading(false)
-      })
-      .catch((error) => {
-        console.error("Failed to fetch blogs:", error)
-        setLoading(false)
-      })
   }, [])
 
   if (!mounted) return null
@@ -48,11 +38,7 @@ export function BlogSection() {
           <p className="text-xl text-muted-foreground">技術ブログの最新記事</p>
         </div>
 
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          </div>
-        ) : blogs.length > 0 ? (
+        {blogs.length > 0 ? (
           <>
             <div className="max-w-4xl mx-auto space-y-6 mb-12">
               {blogs.map((blog, index) => {

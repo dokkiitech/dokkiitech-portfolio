@@ -6,30 +6,20 @@ import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useWindowScrollInElement } from "use-window-scroll-in-element"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getZennProductArticles } from "@/lib/zenn"
 import type { ZennArticle } from "@/lib/zenn"
 
-export function ProductsSection() {
+interface ProductsSectionProps {
+  products: ZennArticle[]
+}
+
+export function ProductsSection({ products }: ProductsSectionProps) {
   const [mounted, setMounted] = useState(false)
-  const [products, setProducts] = useState<ZennArticle[]>([])
-  const [loading, setLoading] = useState(true)
   const sectionRef = useRef<HTMLElement>(null)
   const scrollData = useWindowScrollInElement(sectionRef as React.RefObject<HTMLElement>)
   const scrollFraction = scrollData?.fraction?.top ?? 0
 
   useEffect(() => {
     setMounted(true)
-
-    // Zenn APIからプロダクトを取得
-    getZennProductArticles("dokkiitech", 3)
-      .then((data) => {
-        setProducts(data)
-        setLoading(false)
-      })
-      .catch((error) => {
-        console.error("Failed to fetch products:", error)
-        setLoading(false)
-      })
   }, [])
 
   if (!mounted) return null
@@ -61,11 +51,7 @@ export function ProductsSection() {
           <p className="text-xl text-muted-foreground">最新のプロダクト</p>
         </div>
 
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          </div>
-        ) : products.length > 0 ? (
+        {products.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
               {products.map((product, index) => {
