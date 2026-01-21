@@ -1,10 +1,9 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, BookOpen } from "lucide-react"
 import Link from "next/link"
-import { useWindowScrollInElement } from "use-window-scroll-in-element"
 import type { ZennArticle } from "@/lib/zenn"
 
 interface BlogSectionProps {
@@ -13,21 +12,16 @@ interface BlogSectionProps {
 
 export function BlogSection({ blogs }: BlogSectionProps) {
   const [mounted, setMounted] = useState(false)
-  const sectionRef = useRef<HTMLElement>(null)
-  const scrollData = useWindowScrollInElement(sectionRef as React.RefObject<HTMLElement>)
-  const scrollFraction = scrollData?.fraction?.top ?? 0
 
   useEffect(() => {
     setMounted(true)
+    console.log('BlogSection mounted with blogs:', blogs.length)
   }, [])
 
   if (!mounted) return null
 
-  const scrollProgress = scrollFraction * 100
-
   return (
     <section
-      ref={sectionRef}
       className="snap-section flex items-center justify-center bg-muted/30 py-20"
     >
       <div className="container mx-auto px-4">
@@ -42,8 +36,7 @@ export function BlogSection({ blogs }: BlogSectionProps) {
           <>
             <div className="max-w-4xl mx-auto space-y-6 mb-12">
               {blogs.map((blog, index) => {
-                const delay = index * 0.15
-                const isVisible = scrollProgress > 20
+                const delay = index * 0.1
 
                 return (
                   <a
@@ -51,13 +44,9 @@ export function BlogSection({ blogs }: BlogSectionProps) {
                     href={blog.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`group block p-6 rounded-2xl border-2 bg-card hover:bg-accent transition-all duration-500 ${
-                      isVisible
-                        ? 'opacity-100 translate-x-0'
-                        : 'opacity-0 -translate-x-20'
-                    }`}
+                    className="group block p-6 rounded-2xl border-2 bg-card hover:bg-accent transition-all duration-500 opacity-100 translate-x-0 animate-fade-in"
                     style={{
-                      transitionDelay: `${delay}s`
+                      animationDelay: `${delay}s`
                     }}
                   >
                     <div className="flex items-start gap-4">

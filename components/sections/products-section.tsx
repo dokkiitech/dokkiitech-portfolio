@@ -1,10 +1,9 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
-import { useWindowScrollInElement } from "use-window-scroll-in-element"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { ZennArticle } from "@/lib/zenn"
 
@@ -14,23 +13,13 @@ interface ProductsSectionProps {
 
 export function ProductsSection({ products }: ProductsSectionProps) {
   const [mounted, setMounted] = useState(false)
-  const sectionRef = useRef<HTMLElement>(null)
-  const scrollData = useWindowScrollInElement(sectionRef as React.RefObject<HTMLElement>)
-  const scrollFraction = scrollData?.fraction?.top ?? 0
 
   useEffect(() => {
     setMounted(true)
+    console.log('ProductsSection mounted with products:', products.length)
   }, [])
 
   if (!mounted) return null
-
-  const scrollProgress = scrollFraction * 100
-
-  // スクロール進捗に応じて表示するカードを計算
-  const visibleCards = Math.min(
-    Math.ceil(scrollFraction * (products.length || 3) * 1.5),
-    products.length || 3
-  )
 
   const colors = [
     "from-blue-500 to-cyan-500",
@@ -40,7 +29,6 @@ export function ProductsSection({ products }: ProductsSectionProps) {
 
   return (
     <section
-      ref={sectionRef}
       className="snap-section flex items-center justify-center overflow-hidden py-20"
     >
       <div className="container mx-auto px-4">
@@ -55,7 +43,6 @@ export function ProductsSection({ products }: ProductsSectionProps) {
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
               {products.map((product, index) => {
-                const isVisible = index < visibleCards
                 const delay = index * 0.2
                 const color = colors[index % colors.length]
 
@@ -68,16 +55,9 @@ export function ProductsSection({ products }: ProductsSectionProps) {
                     className="block"
                   >
                     <Card
-                      className={`relative overflow-hidden transition-all duration-700 border-2 hover:shadow-xl hover:scale-105 h-full ${
-                        isVisible
-                          ? 'opacity-100 translate-y-0'
-                          : 'opacity-0 translate-y-20'
-                      }`}
+                      className="relative overflow-hidden border-2 hover:shadow-xl hover:scale-105 h-full transition-all duration-300 animate-fade-in"
                       style={{
-                        transitionDelay: `${delay}s`,
-                        transform: isVisible
-                          ? `perspective(1000px) rotateY(0deg)`
-                          : `perspective(1000px) rotateY(-15deg)`,
+                        animationDelay: `${delay}s`
                       }}
                     >
                       <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-10`}></div>
