@@ -74,17 +74,14 @@
     }
   }
 
-  /* Snap Scroll Styles */
+  /* Smooth Scroll Styles - より自然なスクロール */
   .snap-container {
-    scroll-snap-type: y mandatory;
     scroll-behavior: smooth;
     overflow-y: scroll;
     height: 100vh;
   }
 
   .snap-section {
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
     min-height: 100vh;
     position: relative;
   }
