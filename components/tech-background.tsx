@@ -22,14 +22,16 @@ interface Connection {
 
 interface TechBackgroundProps {
   containerRef?: React.RefObject<HTMLElement>
+  scrollProgress?: number
 }
 
-export function TechBackground({ containerRef }: TechBackgroundProps) {
+export function TechBackground({ containerRef, scrollProgress = 0 }: TechBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const particlesRef = useRef<Particle[]>([])
   const connectionsRef = useRef<Connection[]>([])
-  const animationFrameRef = useRef<number>()
-  const resizeTimeoutRef = useRef<NodeJS.Timeout>()
+  const animationFrameRef = useRef<number | undefined>(undefined)
+  const resizeTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const scrollProgressRef = useRef<number>(scrollProgress)
 
   const codeSnippets = [
     'go',
@@ -175,11 +177,14 @@ export function TechBackground({ containerRef }: TechBackgroundProps) {
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
+      // スクロール進捗に応じた速度調整
+      const speedMultiplier = 1 + (scrollProgressRef.current / 100) * 2
+
       // パーティクルの更新と描画
       particlesRef.current.forEach(particle => {
-        // 位置更新
-        particle.x += particle.vx
-        particle.y += particle.vy
+        // 位置更新（スクロール連動）
+        particle.x += particle.vx * speedMultiplier
+        particle.y += particle.vy * speedMultiplier
 
         // 画面端での反射
         if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1
@@ -280,6 +285,11 @@ export function TechBackground({ containerRef }: TechBackgroundProps) {
       }
     }
   }, [])
+
+  // scrollProgressをrefに同期
+  useEffect(() => {
+    scrollProgressRef.current = scrollProgress
+  }, [scrollProgress])
 
   return (
     <canvas

@@ -1,41 +1,72 @@
-import { HeroSection } from "@/components/hero-section"
-import { LatestProducts } from "@/components/latest-products"
-import { Suspense, lazy } from "react"
+"use client"
 
-// 他のコンポーネントを遅延読み込み
-const CodeAnimation = lazy(() => import("@/components/code-animation").then(m => ({ default: m.CodeAnimation })))
-
-// フォールバック用のローディングコンポーネント
-function SectionSkeleton() {
-  return (
-    <div className="container mx-auto px-4 py-16">
-      <div className="animate-pulse">
-        <div className="h-8 bg-gray-300 rounded mb-4 w-1/3 mx-auto"></div>
-        <div className="h-4 bg-gray-300 rounded mb-8 w-1/2 mx-auto"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-64 bg-gray-300 rounded-lg"></div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
+import { HeroSection } from "@/components/sections/hero-section"
+import { AboutSection } from "@/components/sections/about-section"
+import { ProductsSection } from "@/components/sections/products-section"
+import { BlogSection } from "@/components/sections/blog-section"
+import { ContactSection } from "@/components/sections/contact-section"
+import { DotNavigation } from "@/components/dot-navigation"
+import { ScrollProgress } from "@/components/scroll-progress"
+import { useEffect, useRef, useState } from "react"
 
 export default function HomePage() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [activeSection, setActiveSection] = useState(0)
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const handleScroll = () => {
+      const sections = container.querySelectorAll('.snap-section')
+      const scrollPosition = container.scrollTop
+      const windowHeight = window.innerHeight
+
+      sections.forEach((section, index) => {
+        const sectionTop = (section as HTMLElement).offsetTop
+        const sectionBottom = sectionTop + windowHeight
+
+        if (scrollPosition >= sectionTop - windowHeight / 2 && scrollPosition < sectionBottom - windowHeight / 2) {
+          setActiveSection(index)
+        }
+      })
+    }
+
+    container.addEventListener('scroll', handleScroll)
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const scrollToSection = (index: number) => {
+    const container = containerRef.current
+    if (!container) return
+
+    const sections = container.querySelectorAll('.snap-section')
+    const targetSection = sections[index] as HTMLElement
+
+    if (targetSection) {
+      container.scrollTo({
+        top: targetSection.offsetTop,
+        behavior: 'smooth'
+      })
+    }
+  }
+
   return (
-    <main className="min-h-screen">
-      {/* ヒーローセクションを最優先で読み込み */}
-      <HeroSection />
+    <>
+      <ScrollProgress containerRef={containerRef as React.RefObject<HTMLDivElement>} />
+      <DotNavigation
+        sections={['Hero', 'About', 'Products', 'Blog', 'Contact']}
+        activeSection={activeSection}
+        onSectionClick={scrollToSection}
+      />
 
-      {/* 他のコンポーネントは遅延読み込み */}
-      <Suspense fallback={<SectionSkeleton />}>
-        <CodeAnimation />
-      </Suspense>
-
-      <Suspense fallback={<SectionSkeleton />}>
-        <LatestProducts />
-      </Suspense>
-    </main>
+      <div ref={containerRef} className="snap-container">
+        <HeroSection containerRef={containerRef as React.RefObject<HTMLDivElement>} />
+        <AboutSection />
+        <ProductsSection />
+        <BlogSection />
+        <ContactSection />
+      </div>
+    </>
   )
 }
