@@ -10,17 +10,30 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "DOKKIITECH",
   description: "木戸亮輔のポートフォリオサイトです。私のプロダクト情報やSNSアカウントの紹介など木戸亮輔についての全ての情報が手に入ります。",
+  manifest: '/site.webmanifest',
   icons: {
     icon: [
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+    other: [
       {
-        url: "/favicon.png",
-        type: "image/svg+xml",
+        rel: 'icon',
+        url: '/android-chrome-192x192.png',
+        sizes: '192x192',
+        type: 'image/png',
+      },
+      {
+        rel: 'icon',
+        url: '/android-chrome-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
       },
     ],
-    shortcut: "/favicon.png",
-    apple: "/favicon.png",
   },
-    generator: 'v0.dev'
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
