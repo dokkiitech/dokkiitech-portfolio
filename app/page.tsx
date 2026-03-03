@@ -4,8 +4,9 @@ import { BlogCard } from "@/components/blog-card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { getZennArticles, getZennProductArticles } from "@/lib/zenn"
+import { getZennArticles } from "@/lib/zenn"
 import {
+  ArrowRight,
   BookOpen,
   Calendar,
   Clock,
@@ -16,9 +17,9 @@ import {
   Lightbulb,
   Mail,
   MessageCircle,
-  Package,
   Rocket,
 } from "lucide-react"
+import Link from "next/link"
 import { Suspense, lazy } from "react"
 import { RiTwitterXFill } from "react-icons/ri"
 
@@ -41,7 +42,7 @@ function SectionSkeleton() {
 }
 
 export default async function HomePage() {
-  const [articles, products] = await Promise.all([getZennArticles("dokkiitech"), getZennProductArticles("dokkiitech")])
+  const latestArticles = (await getZennArticles("dokkiitech")).slice(0, 3)
 
   const skills = ["Next.js", "React", "TypeScript", "CloudFlare", "AWS", "Docker", "PostgreSQL", "Python", "Java", "GAS"]
 
@@ -104,6 +105,41 @@ export default async function HomePage() {
         <Suspense fallback={<SectionSkeleton />}>
           <LatestProducts />
         </Suspense>
+      </section>
+
+      <section id="blog" className="container mx-auto scroll-mt-24 px-4 py-16">
+        <div className="mb-12 text-center">
+          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+            <BookOpen className="h-8 w-8 text-primary" />
+          </div>
+          <h2 className="mb-4 text-4xl font-bold">ブログ</h2>
+          <p className="mx-auto max-w-2xl text-muted-foreground">最新の記事を3件表示しています。すべての記事はブログページで確認できます。</p>
+        </div>
+
+        {latestArticles.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {latestArticles.map((article) => (
+                <BlogCard key={article.link} article={article} />
+              ))}
+            </div>
+            <div className="mt-10 text-center">
+              <Button size="lg" variant="outline" className="rounded-full border-2 px-8 py-6 text-lg transition-all duration-300 hover:bg-muted/50" asChild>
+                <Link href="/blog">
+                  すべての記事を見る
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="py-12 text-center">
+            <p className="text-muted-foreground">記事を読み込めませんでした。</p>
+            <Link href="/blog" className="mt-4 inline-block text-primary hover:underline">
+              ブログページを見る →
+            </Link>
+          </div>
+        )}
       </section>
 
       <section id="about" className="container mx-auto max-w-4xl scroll-mt-24 px-4 py-16">
@@ -186,50 +222,6 @@ export default async function HomePage() {
             </CardContent>
           </Card>
         </div>
-      </section>
-
-      <section id="blog" className="container mx-auto scroll-mt-24 px-4 py-16">
-        <div className="mb-12 text-center">
-          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <BookOpen className="h-8 w-8 text-primary" />
-          </div>
-          <h2 className="mb-4 text-4xl font-bold">ブログ</h2>
-          <p className="mx-auto max-w-2xl text-muted-foreground">Zennで技術記事を投稿しています。プログラミング、開発ツール、技術トレンドなどについて書いています。</p>
-        </div>
-
-        {articles.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {articles.map((article) => (
-              <BlogCard key={article.link} article={article} />
-            ))}
-          </div>
-        ) : (
-          <div className="py-12 text-center">
-            <p className="text-muted-foreground">記事を読み込めませんでした。</p>
-          </div>
-        )}
-      </section>
-
-      <section id="all-products" className="container mx-auto scroll-mt-24 px-4 py-16">
-        <div className="mb-12 text-center">
-          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Package className="h-8 w-8 text-primary" />
-          </div>
-          <h2 className="mb-4 text-4xl font-bold">Products</h2>
-          <p className="mx-auto max-w-2xl text-muted-foreground">これまで開発したプロダクトの一覧です。各プロダクトの詳細はZennで公開しています。</p>
-        </div>
-
-        {products.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {products.map((article) => (
-              <BlogCard key={article.link} article={article} />
-            ))}
-          </div>
-        ) : (
-          <div className="py-12 text-center">
-            <p className="text-muted-foreground">プロダクトを準備中です。</p>
-          </div>
-        )}
       </section>
 
       <section id="contact" className="container mx-auto max-w-4xl scroll-mt-24 px-4 py-16">

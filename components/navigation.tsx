@@ -7,11 +7,17 @@ import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Menu, X } from "lucide-react"
 
-const navigation = [
+type NavItem = {
+  name: string
+  href: string
+  hash?: string
+}
+
+const navigation: NavItem[] = [
   { name: "Home", href: "/#home", hash: "#home" },
   { name: "About", href: "/#about", hash: "#about" },
-  { name: "Products", href: "/#all-products", hash: "#all-products" },
-  { name: "Blog", href: "/#blog", hash: "#blog" },
+  { name: "Products", href: "/products" },
+  { name: "Blog", href: "/blog" },
   { name: "Contact", href: "/#contact", hash: "#contact" },
   { name: "Appoint", href: "/#appoint", hash: "#appoint" },
 ]
@@ -32,6 +38,14 @@ export function Navigation() {
     return () => window.removeEventListener("hashchange", updateHash)
   }, [])
 
+  const isActive = (item: NavItem) => {
+    if (item.hash) {
+      return pathname === "/" && currentHash === item.hash
+    }
+
+    return pathname === item.href
+  }
+
   return (
     <>
       <nav className="fixed top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
@@ -44,12 +58,7 @@ export function Navigation() {
 
             <div className="hidden items-center space-x-1 md:flex">
               {navigation.map((item) => (
-                <Button
-                  key={item.name}
-                  variant={pathname === "/" && currentHash === item.hash ? "default" : "ghost"}
-                  className="rounded-full"
-                  asChild
-                >
+                <Button key={item.name} variant={isActive(item) ? "default" : "ghost"} className="rounded-full" asChild>
                   <Link href={item.href}>{item.name}</Link>
                 </Button>
               ))}
@@ -92,7 +101,7 @@ export function Navigation() {
                 }}
               >
                 <Button
-                  variant={pathname === "/" && currentHash === item.hash ? "default" : "ghost"}
+                  variant={isActive(item) ? "default" : "ghost"}
                   size="lg"
                   className="min-w-[200px] rounded-full bg-gradient-to-r from-blue-500/5 to-purple-500/5 px-8 py-6 text-2xl transition-all duration-300 hover:scale-105 hover:from-blue-500/20 hover:to-purple-500/20"
                   asChild
