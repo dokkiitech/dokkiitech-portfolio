@@ -34,7 +34,7 @@ export async function LatestProducts() {
             className="rounded-full px-8 py-6 text-lg border-2 hover:bg-muted/50 transition-all duration-300"
             asChild
           >
-            <Link href="/products">
+            <Link href="/#all-products">
               すべてのプロダクトを見る
               <ArrowRight className="ml-2 w-5 h-5" />
             </Link>
