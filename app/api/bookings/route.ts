@@ -171,6 +171,41 @@ async function checkSlotBusy(accessToken: string, calendarId: string, date: stri
   return busyList.length > 0
 }
 
+async function getBusyRangesForDay(
+  accessToken: string,
+  calendarId: string,
+  date: string
+): Promise<Array<{ start: number; end: number }>> {
+  const nextDate = addDays(date, 1)
+  const dayStartIso = new Date(`${date}T00:00:00${DEFAULT_OFFSET}`).toISOString()
+  const dayEndIso = new Date(`${nextDate}T00:00:00${DEFAULT_OFFSET}`).toISOString()
+
+  const response = await fetch("https://www.googleapis.com/calendar/v3/freeBusy", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      timeMin: dayStartIso,
+      timeMax: dayEndIso,
+      timeZone: DEFAULT_TIMEZONE,
+      items: [{ id: calendarId }],
+    }),
+  })
+
+  if (!response.ok) {
+    const reason = await response.text()
+    throw new Error(`FreeBusy(day) request failed: ${reason}`)
+  }
+
+  const json = (await response.json()) as { calendars?: Record<string, { busy?: Array<{ start: string; end: string }> }> }
+  const busyList = json.calendars?.[calendarId]?.busy || []
+  return busyList
+    .map((item) => ({ start: new Date(item.start).getTime(), end: new Date(item.end).getTime() }))
+    .filter((item) => Number.isFinite(item.start) && Number.isFinite(item.end) && item.end > item.start)
+}
+
 async function hasAllDayBusyEvent(accessToken: string, calendarId: string, date: string): Promise<boolean> {
   const nextDate = addDays(date, 1)
   const dayStartIso = new Date(`${date}T00:00:00${DEFAULT_OFFSET}`).toISOString()
@@ -204,12 +239,13 @@ async function hasAllDayBusyEvent(accessToken: string, calendarId: string, date:
 
 async function listAvailableSlots(accessToken: string, calendarId: string, date: string): Promise<string[]> {
   const candidates = getDefaultSlots(date)
-  const result: string[] = []
-  for (const slot of candidates) {
-    const busy = await checkSlotBusy(accessToken, calendarId, date, slot)
-    if (!busy) result.push(slot)
-  }
-  return result
+  const busyRanges = await getBusyRangesForDay(accessToken, calendarId, date)
+  return candidates.filter((slot) => {
+    const { startDateTime, endDateTime } = getStartEnd(date, slot)
+    const slotStart = new Date(startDateTime).getTime()
+    const slotEnd = new Date(endDateTime).getTime()
+    return !busyRanges.some((busy) => slotStart < busy.end && slotEnd > busy.start)
+  })
 }
 
 async function sendResendMail(to: string, subject: string, html: string) {
