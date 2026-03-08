@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react"
 
-const STORAGE_KEY = "dokkiitech_portfolio_first_visit_done_v1"
 const prompt = "dokkiitech@portfolio:~$"
 
 export function FirstVisitLoader() {
@@ -38,11 +37,7 @@ export function FirstVisitLoader() {
   )
 
   useEffect(() => {
-    const done = window.localStorage.getItem(STORAGE_KEY)
-    if (done === "1") return
-
     setShow(true)
-    window.localStorage.setItem(STORAGE_KEY, "1")
 
     const intervalMs = 260
     const lineTimer = setInterval(() => {
