@@ -29,12 +29,12 @@ const snsLinks = [
 
 const pageMap: Record<string, string> = {
   home: "/",
-  profile: "/profile",
-  blog: "/blog",
-  product: "/products",
-  products: "/products",
-  booking: "/appoint",
-  appoint: "/appoint",
+  profile: "/#profile",
+  blog: "/#blog",
+  product: "/#product",
+  products: "/#product",
+  booking: "/#booking",
+  appoint: "/#booking",
   sns: "/#sns",
 }
 
@@ -56,7 +56,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
       blog: blogArticles.slice(0, 3).map((item) => `- ${item.title}`),
       product: productArticles.slice(0, 3).map((item) => `- ${item.title}`),
       sns: snsLinks.map((item) => `- ${item.label}: ${item.href}`),
-      booking: ["予約ページ: /appoint", "cd booking で移動できます。"],
+      booking: ["予約セクション: /#booking", "cd booking で移動できます。"],
     }),
     [blogArticles, productArticles]
   )
@@ -222,9 +222,9 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
               <article id="blog" className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-2xl font-semibold">ブログ</h2>
-                  <Link href="/blog" className="text-sm text-sky-300 underline">
-                    すべて見る
-                  </Link>
+                  <a href="https://zenn.dev/dokkiitech" target="_blank" rel="noreferrer" className="text-sm text-sky-300 underline">
+                    Zennで見る
+                  </a>
                 </div>
                 <div className="space-y-3">
                   {blogArticles.slice(0, 4).map((item) => (
@@ -239,9 +239,9 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
               <article id="product" className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-2xl font-semibold">Product</h2>
-                  <Link href="/products" className="text-sm text-sky-300 underline">
-                    一覧へ
-                  </Link>
+                  <a href="https://zenn.dev/dokkiitech" target="_blank" rel="noreferrer" className="text-sm text-sky-300 underline">
+                    Zennで見る
+                  </a>
                 </div>
                 <div className="space-y-3">
                   {productArticles.slice(0, 4).map((item) => (
@@ -272,6 +272,17 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
                   </a>
                 ))}
               </div>
+            </article>
+
+            <article id="booking" className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
+              <h2 className="mb-3 text-2xl font-semibold">予約</h2>
+              <p className="text-slate-300">
+                打ち合わせ予約は `meet / 対面` に対応しています。対面の場合は場所指定ありで調整します。
+                連絡は `info@dokkiitech.com` でも可能です。
+              </p>
+              <Link href="/appoint" className="mt-4 inline-block rounded-lg border border-cyan-400/40 bg-cyan-500/10 px-4 py-2 text-cyan-100">
+                予約フォームを開く
+              </Link>
             </article>
           </section>
         )}
