@@ -22,6 +22,7 @@ function buildFallbackSlots(dateStr: string): string[] {
 export default function AppointPage() {
   const [serverMessage, setServerMessage] = useState("")
   const [submitting, setSubmitting] = useState(false)
+  const [successInfo, setSuccessInfo] = useState<{ date: string; timeSlot: string; bookingType: string } | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date())
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
@@ -117,23 +118,43 @@ export default function AppointPage() {
         body: JSON.stringify(values),
       })
       const result = await response.json()
-      const manageUrl = result.managePortal?.url ? `予約管理URL: ${result.managePortal.url}` : ""
-      const resendState = result.resend
-        ? result.resend.sent
-          ? "Resend: 送信成功"
-          : `Resend: 送信失敗 (${result.resend.reason || "unknown"})`
-        : ""
-      const detail = [result.message, result.hint, manageUrl, resendState, result.managePortalError, result.error].filter(Boolean).join("\n")
-      setServerMessage(detail || "送信が完了しました。")
       if (result.ok) {
+        setSuccessInfo({
+          date: values.date,
+          timeSlot: values.timeSlot,
+          bookingType: values.bookingType,
+        })
         reset({ bookingType: values.bookingType, timeSlot: "" })
         setSelectedDate(undefined)
+      } else {
+        const detail = [result.message, result.hint, result.managePortalError, result.error].filter(Boolean).join("\n")
+        setServerMessage(detail || "送信に失敗しました。")
       }
     } catch {
       setServerMessage("通信エラーが発生しました。時間をおいて再度お試しください。")
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (successInfo) {
+    return (
+      <main className="min-h-screen bg-background text-foreground">
+        <section className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-4 text-center">
+          <div className="mb-6 h-24 w-24 animate-pulse rounded-full border-4 border-emerald-500/40 bg-emerald-500/15" />
+          <h1 className="animate-fade-in text-4xl font-bold">予約完了</h1>
+          <p className="mt-4 text-muted-foreground">
+            {successInfo.date} {successInfo.timeSlot} / {successInfo.bookingType}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            カレンダー招待と確認メールを送信しました。予約者専用ページURLはメールをご確認ください。
+          </p>
+          <Button className="mt-8" onClick={() => setSuccessInfo(null)}>
+            続けて予約する
+          </Button>
+        </section>
+      </main>
+    )
   }
 
   return (
