@@ -8,21 +8,26 @@ export default function Loading() {
   const logs = useMemo(
     () => [
       `${prompt} dokkiitech Portfolio building...`,
-      "[+] Building 6.4s (14/14) FINISHED",
-      " => [frontend 1/6] FROM node:22-alpine",
-      " => [frontend 2/6] WORKDIR /app",
-      " => [frontend 3/6] COPY package.json pnpm-lock.yaml ./",
-      " => [frontend 4/6] RUN pnpm install --frozen-lockfile",
-      " => [frontend 5/6] COPY . .",
-      " => [frontend 6/6] RUN pnpm build (Next.js 15)",
-      " => [backend 1/5] FROM golang:1.24-alpine",
-      " => [backend 2/5] WORKDIR /src",
-      " => [backend 3/5] COPY go.mod go.sum ./",
-      " => [backend 4/5] RUN go mod download",
-      " => [backend 5/5] RUN CGO_ENABLED=0 go build ./cmd/api",
-      " => [worker 1/3] installing redis, nginx, grpc gateway",
-      " => exporting to image",
-      " => naming to dokkiitech/portfolio:latest",
+      "frontend_1  | Pulling from library/node",
+      "frontend_1  | 8c7716127147: Pulling fs layer",
+      "frontend_1  | 8c7716127147: Downloading [=======>                     ]  14.2MB/58.0MB",
+      "frontend_1  | 8c7716127147: Download complete",
+      "frontend_1  | 8c7716127147: Extracting [=================>           ]  32.1MB/58.0MB",
+      "frontend_1  | 8c7716127147: Pull complete",
+      "backend_1   | Pulling from library/golang",
+      "backend_1   | a12f4b8de019: Pulling fs layer",
+      "backend_1   | a12f4b8de019: Downloading [==========>                 ]  41.8MB/102MB",
+      "backend_1   | a12f4b8de019: Download complete",
+      "backend_1   | a12f4b8de019: Extracting [======================>      ]  76.4MB/102MB",
+      "backend_1   | a12f4b8de019: Pull complete",
+      "frontend_1  | pnpm install --frozen-lockfile",
+      "frontend_1  | pnpm build (Next.js 15)",
+      "backend_1   | go mod download",
+      "backend_1   | go build ./cmd/api",
+      "[+] Running 3/3",
+      " ✔ Container portfolio_frontend  Started",
+      " ✔ Container portfolio_backend   Started",
+      " ✔ Container portfolio_nginx     Started",
       `${prompt} complete🎉`,
     ],
     []
@@ -39,7 +44,7 @@ export default function Loading() {
         }
         return prev + 1
       })
-    }, 120)
+    }, 220)
     return () => clearInterval(interval)
   }, [logs.length])
 

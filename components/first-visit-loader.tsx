@@ -12,11 +12,26 @@ export function FirstVisitLoader() {
   const logs = useMemo(
     () => [
       `${prompt} dokkiitech Portfolio building...`,
-      "[+] Building 6.4s (14/14) FINISHED",
-      " => [frontend] Next.js app build",
-      " => [backend] Go API build",
-      " => [deps] redis/nginx/grpc-gateway setup",
-      " => exporting image dokkiitech/portfolio:latest",
+      "frontend_1  | Pulling from library/node",
+      "frontend_1  | 8c7716127147: Pulling fs layer",
+      "frontend_1  | 8c7716127147: Downloading [=======>                     ]  14.2MB/58.0MB",
+      "frontend_1  | 8c7716127147: Download complete",
+      "frontend_1  | 8c7716127147: Extracting [=================>           ]  32.1MB/58.0MB",
+      "frontend_1  | 8c7716127147: Pull complete",
+      "backend_1   | Pulling from library/golang",
+      "backend_1   | a12f4b8de019: Pulling fs layer",
+      "backend_1   | a12f4b8de019: Downloading [==========>                 ]  41.8MB/102MB",
+      "backend_1   | a12f4b8de019: Download complete",
+      "backend_1   | a12f4b8de019: Extracting [======================>      ]  76.4MB/102MB",
+      "backend_1   | a12f4b8de019: Pull complete",
+      "frontend_1  | pnpm install --frozen-lockfile",
+      "frontend_1  | pnpm build (Next.js 15)",
+      "backend_1   | go mod download",
+      "backend_1   | go build ./cmd/api",
+      "[+] Running 3/3",
+      " ✔ Container portfolio_frontend  Started",
+      " ✔ Container portfolio_backend   Started",
+      " ✔ Container portfolio_nginx     Started",
       `${prompt} complete🎉`,
     ],
     []
@@ -29,13 +44,14 @@ export function FirstVisitLoader() {
     setShow(true)
     window.localStorage.setItem(STORAGE_KEY, "1")
 
+    const intervalMs = 260
     const lineTimer = setInterval(() => {
       setVisibleCount((prev) => Math.min(prev + 1, logs.length))
-    }, 180)
+    }, intervalMs)
 
     const hideTimer = setTimeout(() => {
       setShow(false)
-    }, 2400)
+    }, intervalMs * (logs.length + 3))
 
     return () => {
       clearInterval(lineTimer)
