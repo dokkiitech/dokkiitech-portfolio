@@ -87,7 +87,7 @@ export function FirstVisitLoader() {
         <span className="h-3 w-3 rounded-full bg-yellow-400" />
         <span className="h-3 w-3 rounded-full bg-green-400" />
       </div>
-      <pre className="mb-5 max-w-full overflow-x-auto border border-emerald-500/40 bg-emerald-500/10 p-2 text-[5px] leading-tight text-emerald-200 sm:p-3 sm:text-[7px] md:text-xs">
+      <pre className="mb-5 overflow-x-auto border border-emerald-400/30 bg-emerald-400/5 p-3 text-[9px] leading-tight text-emerald-300 md:text-xs">
         {logo}
       </pre>
       <div className="space-y-1">
