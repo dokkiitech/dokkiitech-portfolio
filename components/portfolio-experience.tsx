@@ -149,8 +149,14 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-slate-100">
-      <section className="mx-auto max-w-6xl px-4 pb-20 pt-24">
-        <header className="mb-8 rounded-2xl border border-slate-700 bg-slate-900/70 p-4 backdrop-blur">
+      <section
+        className={
+          mode === "terminal"
+            ? "min-h-[calc(100vh-4rem)] w-full px-0 pb-0 pt-4"
+            : "mx-auto max-w-6xl px-4 pb-20 pt-24"
+        }
+      >
+        <header className={`${mode === "terminal" ? "mx-4" : ""} mb-6 rounded-2xl border border-slate-700 bg-slate-900/70 p-4 backdrop-blur`}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h1 className="text-xl font-semibold">DOKKIITECH Portfolio</h1>
             <div className="inline-flex rounded-lg border border-slate-600 p-1 text-sm">
@@ -173,7 +179,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
         </header>
 
         {mode === "terminal" ? (
-          <section className="rounded-2xl border border-slate-700 bg-black/70 p-4 shadow-2xl shadow-black/30">
+          <section className="h-[calc(100vh-11rem)] w-full rounded-none border-y border-slate-700 bg-black/80 p-4 shadow-2xl shadow-black/30">
             <div className="mb-4 flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-red-400" />
               <span className="h-3 w-3 rounded-full bg-yellow-400" />
