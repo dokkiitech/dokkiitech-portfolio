@@ -8,7 +8,8 @@ export const metadata = {
 }
 
 export default async function BlogPage() {
-  const articles = await getZennArticles("dokkiitech")
+  const username = process.env.NEXT_PUBLIC_ZENN_USERNAME || "dokkiitech"
+  const articles = await getZennArticles(username)
 
   return (
     <main className="min-h-screen">
@@ -23,7 +24,7 @@ export default async function BlogPage() {
             Zennで技術記事を投稿しています。プログラミング、開発ツール、技術トレンドなどについて書いています。
           </p>
           <a
-            href="https://zenn.dev/dokkiitech"
+            href={`https://zenn.dev/${username}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block mt-4 text-primary hover:underline"
@@ -43,7 +44,7 @@ export default async function BlogPage() {
           <div className="text-center py-12">
             <p className="text-muted-foreground">記事を読み込めませんでした。</p>
             <a
-              href="https://zenn.dev/dokkiitech"
+              href={`https://zenn.dev/${username}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block mt-4 text-primary hover:underline"

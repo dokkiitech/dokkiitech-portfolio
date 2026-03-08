@@ -1,141 +1,85 @@
 # DOKKIITECH Portfolio
 
-木戸亮輔のポートフォリオサイト。Zennブログと連携し、プロダクトや技術記事を紹介しています。
+Next.js (App Router) で構築したポートフォリオサイトです。  
+トップページで `Terminal Mode / UI Mode` を切り替え、プロフィール・ブログ・Product・SNS を閲覧できます。
 
-## 主な機能
+## 実装ポイント
 
-- **Zennブログ連携**: ZennのRSSフィードから記事を自動取得
-- **Productsページ**: Zennで"Product"タグがついた記事を表示
-- **Blogページ**: すべてのZenn記事を表示
-- **Homeページ**: 上位3件のProduct記事を表示
-- **ダークモード対応**: ライト/ダークテーマの切り替え
-- **レスポンシブデザイン**: モバイル・タブレット・デスクトップ対応
-
-## 技術スタック
-
-- **フレームワーク**: Next.js 15 (App Router)
-- **言語**: TypeScript
-- **スタイリング**: Tailwind CSS
-- **UIコンポーネント**: Radix UI
-- **アイコン**: Lucide React
-- **パッケージマネージャー**: pnpm
+- ヘッダートグル: `Terminal Mode / UI Mode`
+- 日本語UI
+- ブログ連携: Zenn 投稿一覧
+- Product連携: Zenn の `product` タグ記事のみ表示
+- 予約ページ: `meet / 対面` 選択、対面時は場所必須バリデーション
+- 予約 API: Google Calendar 連携を見据えた API 契約 + モック実装
+- レスポンシブ対応（mobile / tablet / desktop）
 
 ## セットアップ
 
-### 前提条件
-
-- Node.js 18以上
-- pnpm 10以上
-
-### インストール
-
 ```bash
-# リポジトリをクローン
-git clone https://github.com/dokkiitech/portfolio.git
-cd portfolio
-
-# 依存関係をインストール
 pnpm install
-```
-
-### 開発サーバーの起動
-
-```bash
 pnpm dev
 ```
 
-ブラウザで [http://localhost:3000](http://localhost:3000) を開いて確認できます。
+## 環境変数
 
-### ビルド
+`.env.local` の例:
 
 ```bash
+NEXT_PUBLIC_ZENN_USERNAME=dokkiitech
+
+# Zennフィード取得失敗時のフォールバック(JSON配列文字列)
+# ZENN_FALLBACK_ARTICLES_JSON=[{"title":"...","link":"...","pubDate":"...","description":"...","tags":["product"]}]
+ZENN_FALLBACK_ARTICLES_JSON=
+
+# Google Calendar 連携用（現状はモックAPIでプレースホルダ）
+GOOGLE_CALENDAR_CALENDAR_ID=
+GOOGLE_SERVICE_ACCOUNT_EMAIL=
+GOOGLE_PRIVATE_KEY=
+```
+
+## Zenn 連携仕様
+
+- 1st: `https://zenn.dev/{username}/feed` (RSS)
+- 2nd: `rss2json` 経由のフォールバック
+- 3rd: `ZENN_FALLBACK_ARTICLES_JSON`
+
+`/blog` は全記事、`/products` は `product` タグのみ表示します。
+
+## 予約API契約（モック）
+
+- Endpoint: `POST /api/bookings`
+- Request:
+
+```json
+{
+  "name": "山田 太郎",
+  "email": "taro@example.com",
+  "bookingType": "meet",
+  "date": "2026-03-15 14:00",
+  "agenda": "新規プロダクト相談",
+  "location": "渋谷"
+}
+```
+
+- 仕様:
+  - `bookingType` は `meet` または `対面`
+  - `bookingType=対面` の場合は `location` 必須
+  - 現在はモック応答。将来 Google Calendar 登録処理に差し替え可能
+
+## Vercel デプロイ手順
+
+1. GitHub に push
+2. Vercel で `dokkiitech/portfolio` を Import
+3. Build Settings
+   - Framework Preset: `Next.js`
+   - Install Command: `pnpm install`（または lockfile 準拠）
+   - Build Command: `pnpm build`
+4. Environment Variables に上記 `.env.local` と同じ値を設定
+5. Deploy
+
+## 検証コマンド
+
+```bash
+pnpm lint
 pnpm build
 ```
-
-### 本番サーバーの起動
-
-```bash
-pnpm start
-```
-
-ポート3006で起動します。
-
-## ディレクトリ構造
-
-```
-portfolio/
-├── app/                    # Next.js App Router
-│   ├── about/             # Aboutページ
-│   ├── blog/              # Blogページ（全記事）
-│   ├── contact/           # Contactページ
-│   ├── products/          # Productsページ（Productタグの記事）
-│   ├── appoint/           # 予約ページ
-│   ├── layout.tsx         # ルートレイアウト
-│   └── page.tsx           # Homeページ
-├── components/            # Reactコンポーネント
-│   ├── ui/               # 再利用可能なUIコンポーネント
-│   ├── blog-card.tsx     # ブログ記事カード
-│   ├── latest-products.tsx # 最新プロダクト表示
-│   ├── navigation.tsx    # ナビゲーションバー
-│   └── ...
-├── lib/                   # ユーティリティ関数
-│   ├── zenn.ts           # Zenn RSS取得・パース処理
-│   └── utils.ts          # 汎用ユーティリティ
-└── public/               # 静的ファイル
-```
-
-## Zennブログ連携
-
-### 仕組み
-
-1. ZennのRSSフィード (`https://zenn.dev/{username}/feed`) から記事を取得
-2. 1時間ごとにキャッシュを再検証 (ISR)
-3. タグでフィルタリングして表示
-
-### Productタグの活用
-
-Zennで記事を投稿する際に **"Product"** タグをつけると：
-- `/products` ページに表示される
-- Homeページの "Latest Products" セクションに上位3件が表示される
-
-### カスタマイズ
-
-`lib/zenn.ts` でZennのユーザー名を変更できます：
-
-```typescript
-// 例: Blogページ
-const articles = await getZennArticles("dokkiitech")
-
-// 例: Productsページ
-const articles = await getZennProductArticles("dokkiitech")
-```
-
-## 開発のポイント
-
-### コンポーネントの遅延読み込み
-
-パフォーマンス最適化のため、以下のコンポーネントは遅延読み込みを使用：
-- `CodeAnimation`
-- `LatestProducts`
-
-### キャッシュ戦略
-
-- ZennのRSSフィード: 1時間ごとに再検証 (`revalidate: 3600`)
-- ISR (Incremental Static Regeneration) を活用して、静的生成とデータの鮮度を両立
-
-### HTMLタグとCDATAの処理
-
-ZennのRSSフィードに含まれるHTMLタグやCDATAセクションは、`stripHTMLTags`関数で自動的に除去されます。
-
-## ライセンス
-
-Private
-
-## 作者
-
-木戸亮輔 (DOKKIITECH)
-
-- Website: [dokkiitech.com](https://dokkiitech.com)
-- Zenn: [@dokkiitech](https://zenn.dev/dokkiitech)
-# dokkiitech HP
-木戸亮輔のプロフィールを表示するHPです。

@@ -1,96 +1,116 @@
-import { Card, CardContent } from "@/components/ui/card"
+"use client"
+
+import { useMemo, useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { bookingSchema, type BookingInput } from "@/lib/booking"
 import { Button } from "@/components/ui/button"
-import { Calendar, Clock, MessageCircle } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 
 export default function AppointPage() {
+  const [serverMessage, setServerMessage] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+
+  const {
+    register,
+    watch,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<BookingInput>({
+    resolver: zodResolver(bookingSchema),
+    defaultValues: {
+      bookingType: "meet",
+    },
+  })
+
+  const bookingType = watch("bookingType")
+  const showLocation = useMemo(() => bookingType === "対面", [bookingType])
+
+  const onSubmit = async (values: BookingInput) => {
+    setSubmitting(true)
+    setServerMessage("")
+    try {
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      })
+      const result = await response.json()
+      setServerMessage(result.message || "送信が完了しました。")
+      if (result.ok) reset({ bookingType: values.bookingType })
+    } catch {
+      setServerMessage("通信エラーが発生しました。時間をおいて再度お試しください。")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
-    <div className="container mx-auto px-4 py-16 max-w-4xl">
-      <div className="text-center mb-16">
-        <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Appointment
-        </h1>
-        <p className="text-xl text-muted-foreground">お打ち合わせのご予約</p>
-      </div>
+    <main className="min-h-screen bg-slate-950 text-slate-100">
+      <section className="mx-auto max-w-3xl px-4 py-24">
+        <h1 className="text-3xl font-bold">予約ページ</h1>
+        <p className="mt-2 text-slate-300">
+          Google Calendar 連携対応の予約フォームです。現時点では API モックで受け付けます。
+        </p>
 
-      <div className="grid gap-8 md:grid-cols-2">
-        {/* 予約カード */}
-        <Card className="rounded-3xl border-2 hover:shadow-lg transition-all duration-300">
-          <CardContent className="p-8">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold">予約システム</h2>
-            </div>
-            <div className="space-y-6">
-              <p className="text-muted-foreground leading-relaxed">
-                お打ち合わせのご予約はこちらからお願いします。お急ぎの場合は各種SNSよりご連絡ください。
-              </p>
-              <Button
-                size="lg"
-                className="w-full rounded-2xl h-14 text-lg bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-                asChild
-              >
-                <a
-                  href="https://calendar.google.com/calendar/u/0/appointments/AcZssZ3whB7e22y-Jp_M3XR9B8drZ8rJji3IGLGfAsw="
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Calendar className="w-6 h-6 mr-3" />
-                  予約する
-                </a>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5 rounded-xl border border-slate-700 bg-slate-900/60 p-6">
+          <div>
+            <Label htmlFor="name">お名前</Label>
+            <Input id="name" {...register("name")} className="mt-2" />
+            {errors.name && <p className="mt-1 text-sm text-red-300">{errors.name.message}</p>}
+          </div>
 
-        {/* 詳細情報 */}
-        <Card className="rounded-3xl border-2 hover:shadow-lg transition-all duration-300">
-          <CardContent className="p-8">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
-                <Clock className="w-6 h-6 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold">詳細</h2>
-            </div>
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                  <div>
-                    <h3 className="font-semibold mb-1">対応時間</h3>
-                    <p className="text-sm text-muted-foreground">平日 11:00 - 23:59</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                  <div>
-                    <h3 className="font-semibold mb-1">所要時間</h3>
-                    <p className="text-sm text-muted-foreground">30分 - 60分程度</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                  <div>
-                    <h3 className="font-semibold mb-1">形式</h3>
-                    <p className="text-sm text-muted-foreground">オンライン（Google Meet）</p>
-                  </div>
-                </div>
-              </div>
+          <div>
+            <Label htmlFor="email">メールアドレス</Label>
+            <Input id="email" type="email" {...register("email")} className="mt-2" />
+            {errors.email && <p className="mt-1 text-sm text-red-300">{errors.email.message}</p>}
+          </div>
 
-              <div className="p-4 bg-muted/50 rounded-2xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <MessageCircle className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">お急ぎの場合</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  各種SNSよりダイレクトメッセージでご連絡ください。 迅速に対応いたします。
-                </p>
-              </div>
+          <div>
+            <Label>予約タイプ</Label>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <label className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-700 p-3">
+                <input type="radio" value="meet" {...register("bookingType")} />
+                <span>meet</span>
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-700 p-3">
+                <input type="radio" value="対面" {...register("bookingType")} />
+                <span>対面</span>
+              </label>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+            {errors.bookingType && <p className="mt-1 text-sm text-red-300">{errors.bookingType.message}</p>}
+          </div>
+
+          {showLocation && (
+            <div>
+              <Label htmlFor="location">場所（対面必須）</Label>
+              <Input id="location" placeholder="例: 渋谷駅周辺 / 御社オフィス" {...register("location")} className="mt-2" />
+              {errors.location && <p className="mt-1 text-sm text-red-300">{errors.location.message}</p>}
+            </div>
+          )}
+
+          <div>
+            <Label htmlFor="date">希望日時</Label>
+            <Input id="date" placeholder="例: 2026-03-15 14:00" {...register("date")} className="mt-2" />
+            {errors.date && <p className="mt-1 text-sm text-red-300">{errors.date.message}</p>}
+          </div>
+
+          <div>
+            <Label htmlFor="agenda">相談内容</Label>
+            <Textarea id="agenda" rows={5} {...register("agenda")} className="mt-2" />
+            {errors.agenda && <p className="mt-1 text-sm text-red-300">{errors.agenda.message}</p>}
+          </div>
+
+          <Button type="submit" disabled={submitting} className="w-full">
+            {submitting ? "送信中..." : "予約リクエストを送信"}
+          </Button>
+
+          {serverMessage && <p className="rounded-md bg-slate-800 p-3 text-sm">{serverMessage}</p>}
+        </form>
+      </section>
+    </main>
   )
 }
