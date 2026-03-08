@@ -10,6 +10,7 @@ const socials = [
   { name: "X", href: "https://x.com/dokkiitech", id: "@dokkiitech" },
   { name: "Zenn", href: "https://zenn.dev/dokkiitech", id: "@dokkiitech" },
   { name: "Instagram", href: "https://instagram.com/dokkiitech", id: "@dokkiitech" },
+  { name: "Email", href: "mailto:info@dokkiitech.com", id: "info@dokkiitech.com" },
 ]
 
 export default function ProfilePage() {

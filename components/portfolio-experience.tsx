@@ -21,8 +21,10 @@ interface TerminalLine {
 const prompt = "dokkiitech@portfolio:~$"
 const snsLinks = [
   { label: "X", href: "https://x.com/dokkiitech" },
+  { label: "Instagram", href: "https://instagram.com/dokkiitech" },
   { label: "GitHub", href: "https://github.com/dokkiitech" },
   { label: "Zenn", href: "https://zenn.dev/dokkiitech" },
+  { label: "Email", href: "mailto:info@dokkiitech.com" },
 ]
 
 const pageMap: Record<string, string> = {
@@ -40,7 +42,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export function PortfolioExperience({ blogArticles, productArticles }: PortfolioExperienceProps) {
   const router = useRouter()
-  const [mode, setMode] = useState<Mode>("ui")
+  const [mode, setMode] = useState<Mode>("terminal")
   const [history, setHistory] = useState<TerminalLine[]>([])
   const [command, setCommand] = useState("")
   const [isTyping, setIsTyping] = useState(false)
@@ -200,62 +202,76 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
             </div>
           </section>
         ) : (
-          <section className="space-y-10">
-            <article id="profile" className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
-              <h2 className="mb-3 text-2xl font-semibold">プロフィール</h2>
-              <p className="text-slate-300">
-                木戸亮輔（DOKKIITECH）。セキュリティ学習を土台に、Next.js / TypeScript / Go を使ったフルスタック開発を進めています。Zennで開発ログや検証記事を継続的に発信中です。
+          <section className="space-y-8">
+            <article id="profile" className="rounded-3xl border border-cyan-400/30 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-cyan-950/40 p-7 shadow-[0_0_80px_rgba(34,211,238,0.15)]">
+              <p className="text-xs tracking-[0.25em] text-cyan-300">PROFILE</p>
+              <h2 className="mt-2 text-3xl font-bold">木戸亮輔 / DOKKIITECH</h2>
+              <p className="mt-4 max-w-3xl text-slate-300">
+                セキュリティ学習を土台に、Next.js / TypeScript / Go を中心としたプロダクト開発を実践。技術検証や開発知見を Zenn（@dokkiitech）で発信しています。
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-5 flex flex-wrap gap-2">
                 {["Next.js", "TypeScript", "Go", "Docker", "AWS", "Security"].map((tag) => (
-                  <span key={tag} className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
+                  <span key={tag} className="rounded-full border border-cyan-400/40 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-100">
                     {tag}
                   </span>
                 ))}
               </div>
             </article>
 
-            <article id="blog" className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
-              <h2 className="mb-3 text-2xl font-semibold">ブログ</h2>
-              <div className="grid gap-3 md:grid-cols-2">
-                {blogArticles.slice(0, 4).map((item) => (
-                  <a key={item.link} href={item.link} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-700 p-3 hover:bg-slate-800">
-                    <p className="font-medium">{item.title}</p>
-                    <p className="mt-1 text-xs text-slate-400">{new Date(item.pubDate).toLocaleDateString("ja-JP")}</p>
-                  </a>
-                ))}
-              </div>
-              <Link href="/blog" className="mt-4 inline-block text-sky-300 underline">
-                すべて見る
-              </Link>
-            </article>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <article id="blog" className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-2xl font-semibold">ブログ</h2>
+                  <Link href="/blog" className="text-sm text-sky-300 underline">
+                    すべて見る
+                  </Link>
+                </div>
+                <div className="space-y-3">
+                  {blogArticles.slice(0, 4).map((item) => (
+                    <a key={item.link} href={item.link} target="_blank" rel="noreferrer" className="block rounded-xl border border-slate-700 p-3 transition hover:-translate-y-0.5 hover:bg-slate-800">
+                      <p className="font-medium">{item.title}</p>
+                      <p className="mt-1 text-xs text-slate-400">{new Date(item.pubDate).toLocaleDateString("ja-JP")}</p>
+                    </a>
+                  ))}
+                </div>
+              </article>
 
-            <article id="product" className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
-              <h2 className="mb-3 text-2xl font-semibold">Product</h2>
-              <div className="grid gap-3 md:grid-cols-2">
-                {productArticles.slice(0, 4).map((item) => (
-                  <a key={item.link} href={item.link} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-700 p-3 hover:bg-slate-800">
-                    <p className="font-medium">{item.title}</p>
-                    <p className="mt-1 text-xs text-slate-400">{new Date(item.pubDate).toLocaleDateString("ja-JP")}</p>
-                  </a>
-                ))}
-              </div>
-              <Link href="/products" className="mt-4 inline-block text-sky-300 underline">
-                Product一覧へ
-              </Link>
-            </article>
+              <article id="product" className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-2xl font-semibold">Product</h2>
+                  <Link href="/products" className="text-sm text-sky-300 underline">
+                    一覧へ
+                  </Link>
+                </div>
+                <div className="space-y-3">
+                  {productArticles.slice(0, 4).map((item) => (
+                    <a key={item.link} href={item.link} target="_blank" rel="noreferrer" className="block rounded-xl border border-slate-700 p-3 transition hover:-translate-y-0.5 hover:bg-slate-800">
+                      <p className="font-medium">{item.title}</p>
+                      <p className="mt-1 text-xs text-slate-400">{new Date(item.pubDate).toLocaleDateString("ja-JP")}</p>
+                    </a>
+                  ))}
+                </div>
+              </article>
+            </div>
 
             <article id="sns" className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
-              <h2 className="mb-3 text-2xl font-semibold">各種SNSリンク</h2>
-              <ul className="space-y-2 text-slate-300">
+              <h2 className="mb-4 text-2xl font-semibold">各種SNSリンク</h2>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {snsLinks.map((item) => (
-                  <li key={item.href}>
-                    <a href={item.href} target="_blank" rel="noreferrer" className="underline">
-                      {item.label}
-                    </a>
-                  </li>
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    target={item.href.startsWith("mailto:") ? undefined : "_blank"}
+                    rel={item.href.startsWith("mailto:") ? undefined : "noreferrer"}
+                    className="rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-3 transition hover:border-cyan-400/50 hover:bg-slate-800"
+                  >
+                    <p className="font-medium">{item.label}</p>
+                    <p className="text-xs text-slate-400">
+                      {item.label === "Email" ? "info@dokkiitech.com" : "@dokkiitech"}
+                    </p>
+                  </a>
                 ))}
-              </ul>
+              </div>
             </article>
           </section>
         )}
