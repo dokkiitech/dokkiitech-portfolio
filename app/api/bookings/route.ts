@@ -37,6 +37,11 @@ function getDefaultSlots(date: string) {
   })
 }
 
+function isPastSlot(date: string, timeSlot: string): boolean {
+  const { startDateTime } = getStartEnd(date, timeSlot)
+  return new Date(startDateTime).getTime() <= Date.now()
+}
+
 function envOrThrow(key: string): string {
   const value = process.env[key]
   if (!value) throw new Error(`${key} is required`)
@@ -174,17 +179,18 @@ export async function GET(request: Request) {
 
     const mode = getMode()
     if (mode === "mock") {
+      const slots = getDefaultSlots(date).filter((slot) => !isPastSlot(date, slot))
       return NextResponse.json({
         ok: true,
         mode,
         date,
-        slots: getDefaultSlots(date),
+        slots,
       })
     }
 
     const calendarId = envOrThrow("GOOGLE_CALENDAR_CALENDAR_ID")
     const accessToken = await createGoogleAccessToken()
-    const slots = await listAvailableSlots(accessToken, calendarId, date)
+    const slots = (await listAvailableSlots(accessToken, calendarId, date)).filter((slot) => !isPastSlot(date, slot))
     return NextResponse.json({ ok: true, mode, date, slots })
   } catch (error) {
     return NextResponse.json(
@@ -212,6 +218,13 @@ export async function POST(request: Request) {
 
     const payload = parsed.data
     const mode = getMode()
+
+    if (isPastSlot(payload.date, payload.timeSlot)) {
+      return NextResponse.json(
+        { ok: false, mode, message: "過去の時間帯は予約できません。未来の時間を選択してください。" },
+        { status: 400 }
+      )
+    }
 
     if (mode === "mock") {
       return NextResponse.json({
