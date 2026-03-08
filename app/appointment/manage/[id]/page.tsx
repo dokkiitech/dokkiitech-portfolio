@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
+import { BookingCompletionScreen } from "@/components/booking-completion-screen"
 
 interface ManageRecord {
   id: string
@@ -55,6 +56,7 @@ export default function ManageBookingPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
+  const [completion, setCompletion] = useState<{ title: string; description: string; detail?: string } | null>(null)
   const [form, setForm] = useState({
     date: "",
     timeSlot: "",
@@ -178,6 +180,15 @@ export default function ManageBookingPage() {
       }),
     })
     const json = await response.json()
+    if (response.ok && json.ok) {
+      setCompletion({
+        title: "予約変更完了",
+        detail: `${form.date} ${form.timeSlot}`,
+        description: "予約内容を更新しました。確認メールをご確認ください。",
+      })
+      setMessage("")
+      return
+    }
     setMessage([json.message, json.error].filter(Boolean).join("\n"))
   }
 
@@ -188,7 +199,31 @@ export default function ManageBookingPage() {
       body: JSON.stringify({ token, password }),
     })
     const json = await response.json()
+    if (response.ok && json.ok) {
+      setCompletion({
+        title: "予約キャンセル完了",
+        detail: `${form.date} ${form.timeSlot}`,
+        description: "ご予約をキャンセルしました。確認メールをご確認ください。",
+      })
+      setMessage("")
+      return
+    }
     setMessage([json.message, json.error].filter(Boolean).join("\n"))
+  }
+
+  if (completion) {
+    return (
+      <BookingCompletionScreen
+        title={completion.title}
+        detail={completion.detail}
+        description={completion.description}
+        actionLabel="専用ページに戻る"
+        onAction={() => {
+          setCompletion(null)
+          setMessage("")
+        }}
+      />
+    )
   }
 
   return (

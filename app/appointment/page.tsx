@@ -5,13 +5,13 @@ import { eachDayOfInterval, endOfMonth, format, startOfMonth } from "date-fns"
 import { ja } from "date-fns/locale"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Check } from "lucide-react"
 import { bookingSchema, type BookingInput } from "@/lib/booking"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
+import { BookingCompletionScreen } from "@/components/booking-completion-screen"
 
 function formatSlotRange(slot: string): string {
   const start = new Date(`2000-01-01T${slot}:00+09:00`)
@@ -151,23 +151,13 @@ export default function AppointPage() {
 
   if (successInfo) {
     return (
-      <main className="min-h-screen bg-background text-foreground">
-        <section className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-4 text-center">
-          <div className="mb-6 flex h-24 w-24 animate-pulse items-center justify-center rounded-full bg-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.45)]">
-            <Check className="h-12 w-12 animate-bounce text-white" strokeWidth={3.5} />
-          </div>
-          <h1 className="animate-fade-in text-4xl font-bold">予約完了</h1>
-          <p className="mt-4 text-muted-foreground">
-            {successInfo.date} {successInfo.timeSlot} / {successInfo.bookingType}
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            カレンダー招待と確認メールを送信しました。予約者専用ページURLはメールをご確認ください。
-          </p>
-          <Button className="mt-8" onClick={() => setSuccessInfo(null)}>
-            続けて予約する
-          </Button>
-        </section>
-      </main>
+      <BookingCompletionScreen
+        title="予約完了"
+        detail={`${successInfo.date} ${successInfo.timeSlot} / ${successInfo.bookingType}`}
+        description="カレンダー招待と確認メールを送信しました。予約者専用ページURLはメールをご確認ください。"
+        actionLabel="続けて予約する"
+        onAction={() => setSuccessInfo(null)}
+      />
     )
   }
 
