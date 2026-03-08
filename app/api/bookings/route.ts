@@ -228,7 +228,7 @@ export async function POST(request: Request) {
 
     const { startDateTime, endDateTime } = getStartEnd(payload.date, payload.timeSlot)
     const summary = `打ち合わせ: ${payload.name}`
-    const description = `予約タイプ: ${payload.bookingType}\n相談内容: ${payload.agenda}\n申込者メール: ${payload.email}`
+    const description = `予約タイプ: ${payload.bookingType}\n会社名: ${payload.company || "-"}\n相談内容: ${payload.agenda}\n申込者メール: ${payload.email}`
 
     const createEventResponse = await fetch(
       `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?conferenceDataVersion=1&sendUpdates=all`,
@@ -278,6 +278,7 @@ export async function POST(request: Request) {
         <li>日付: ${payload.date}</li>
         <li>時間: ${payload.timeSlot}</li>
         <li>形式: ${payload.bookingType}</li>
+        <li>会社名: ${payload.company || "-"}</li>
         <li>Meet URL: ${event.hangoutLink || "カレンダー招待をご確認ください"}</li>
         <li>場所: ${payload.bookingType === "対面" ? payload.location || "-" : "-"}</li>
       </ul>

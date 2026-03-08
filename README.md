@@ -72,6 +72,7 @@ RESEND_FROM=booking@your-domain.com
 {
   "name": "山田 太郎",
   "email": "taro@example.com",
+  "company": "株式会社サンプル",
   "bookingType": "meet",
   "date": "2026-03-15",
   "timeSlot": "14:00",
@@ -81,6 +82,8 @@ RESEND_FROM=booking@your-domain.com
 ```
 
 - 仕様:
+  - `name` / `email` / `agenda` は必須
+  - `company` は任意
   - `bookingType` は `meet` または `対面`
   - `bookingType=対面` の場合は `location` 必須
   - `BOOKING_BACKEND_MODE=mock` の場合はモック応答

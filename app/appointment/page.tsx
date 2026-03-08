@@ -139,6 +139,11 @@ export default function AppointPage() {
           </div>
 
           <div>
+            <Label htmlFor="company">会社名（任意）</Label>
+            <Input id="company" {...register("company")} className="mt-2" />
+          </div>
+
+          <div>
             <Label>予約タイプ</Label>
             <div className="mt-2 grid grid-cols-2 gap-2">
               <label className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-700 p-3">
