@@ -9,11 +9,11 @@ import { Menu, X } from "lucide-react"
 
 const navigation = [
   { name: "ホーム", href: "/" },
-  { name: "プロフィール", href: "/#profile" },
-  { name: "ブログ", href: "/#blog" },
-  { name: "Product", href: "/#product" },
-  { name: "SNS", href: "/#sns" },
-  { name: "予約", href: "/#booking" },
+  { name: "プロフィール", href: "/profile" },
+  { name: "ブログ", href: "/blog" },
+  { name: "Product", href: "/products" },
+  { name: "SNS", href: "/sns" },
+  { name: "予約", href: "/appoint" },
 ]
 
 export function Navigation() {

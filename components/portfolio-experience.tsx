@@ -29,13 +29,13 @@ const snsLinks = [
 
 const pageMap: Record<string, string> = {
   home: "/",
-  profile: "/#profile",
-  blog: "/#blog",
-  product: "/#product",
-  products: "/#product",
-  booking: "/#booking",
-  appoint: "/#booking",
-  sns: "/#sns",
+  profile: "/profile",
+  blog: "/blog",
+  product: "/products",
+  products: "/products",
+  booking: "/appoint",
+  appoint: "/appoint",
+  sns: "/sns",
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -56,7 +56,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
       blog: blogArticles.slice(0, 3).map((item) => `- ${item.title}`),
       product: productArticles.slice(0, 3).map((item) => `- ${item.title}`),
       sns: snsLinks.map((item) => `- ${item.label}: ${item.href}`),
-      booking: ["予約セクション: /#booking", "cd booking で移動できます。"],
+      booking: ["予約ページ: /appoint", "cd booking で移動できます。"],
     }),
     [blogArticles, productArticles]
   )
