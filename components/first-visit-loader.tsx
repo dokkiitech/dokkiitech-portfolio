@@ -46,7 +46,7 @@ export function FirstVisitLoader() {
 
     const hideTimer = setTimeout(() => {
       setShow(false)
-    }, intervalMs * (logs.length + 3))
+    }, intervalMs * logs.length + 2000)
 
     return () => {
       clearInterval(lineTimer)
