@@ -5,6 +5,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Navigation } from "@/components/navigation"
 import { FirstVisitLoader } from "@/components/first-visit-loader"
+import { CtrlCTerminalShortcut } from "@/components/ctrl-c-terminal-shortcut"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -47,6 +48,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <FirstVisitLoader />
+          <CtrlCTerminalShortcut />
           <Navigation />
           <div className="pt-16">{children}</div>
         </ThemeProvider>
