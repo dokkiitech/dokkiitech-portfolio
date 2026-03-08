@@ -33,12 +33,13 @@ export default function ContactPage() {
   ]
 
   return (
-    <div className="container mx-auto px-4 py-16 max-w-4xl">
+    <main className="min-h-screen bg-gradient-to-b from-background via-sky-50/30 to-background px-4 pb-20 pt-20 dark:via-slate-900/20">
+      <div className="container mx-auto max-w-4xl">
       <div className="text-center mb-16">
-        <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-sky-600 to-cyan-600 bg-clip-text text-transparent">
           Contact
         </h1>
-        <p className="text-xl text-muted-foreground">お気軽にお声がけください</p>
+        <p className="text-xl text-muted-foreground">Open for project collaboration and technical consulting.</p>
       </div>
 
       <div className="grid gap-8 md:grid-cols-2">
@@ -49,7 +50,7 @@ export default function ContactPage() {
               <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                 <Mail className="w-6 h-6 text-white" />
               </div>
-              <h2 className="text-2xl font-bold">SNS</h2>
+              <h2 className="text-2xl font-bold">Social</h2>
             </div>
             <div className="space-y-4">
               {socialLinks.map((link) => (
@@ -82,21 +83,21 @@ export default function ContactPage() {
             </div>
             <div className="space-y-6">
               <p className="text-muted-foreground leading-relaxed">
-                プロジェクトのご相談、技術的な質問、コラボレーションのお誘いなど、
-                どんなことでもお気軽にご連絡ください。
+                Reach out for product development, front-end engineering, technical consultation, or partnership ideas.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                お急ぎの場合は、各種SNSよりダイレクトメッセージをお送りいただけると 迅速にお返事いたします。
+                For urgent requests, a direct message on social channels is usually the fastest route.
               </p>
               <div className="p-4 bg-muted/50 rounded-2xl">
                 <p className="text-sm text-muted-foreground">
-                  通常、24時間以内にお返事いたします。 お仕事のご依頼の場合は、詳細をお聞かせください。
+                  Typical response time is within 24 hours. Include project scope, timeline, and goals for faster alignment.
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
-    </div>
+      </div>
+    </main>
   )
 }

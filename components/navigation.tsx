@@ -9,11 +9,8 @@ import { Menu, X } from "lucide-react"
 
 const navigation = [
   { name: "Home", href: "/" },
-  { name: "About", href: "/about" },
-  { name: "Products", href: "/products" },
-  { name: "Blog", href: "/blog" },
+  { name: "Projects", href: "/projects" },
   { name: "Contact", href: "/contact" },
-  { name: "Appoint", href: "/appoint" },
 ]
 
 export function Navigation() {
@@ -27,7 +24,7 @@ export function Navigation() {
           <div className="flex items-center justify-between h-16">
             {/* ロゴ */}
             <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+              <span className="text-2xl font-bold bg-gradient-to-r from-sky-600 to-cyan-500 bg-clip-text text-transparent">
                 {"<>"}
               </span>
               <span className="font-bold text-lg">dokkiitech.com</span>
@@ -55,7 +52,7 @@ export function Navigation() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20 transition-all duration-300 hover:scale-105"
+                className="md:hidden rounded-full bg-gradient-to-r from-sky-500/10 to-cyan-500/10 hover:from-sky-500/20 hover:to-cyan-500/20 transition-all duration-300 hover:scale-105"
                 onClick={() => setIsOpen(!isOpen)}
               >
                 <div className="relative w-5 h-5">
@@ -103,7 +100,7 @@ export function Navigation() {
                 <Button
                   variant={pathname === item.href ? "default" : "ghost"}
                   size="lg"
-                  className="text-2xl py-6 px-8 rounded-full min-w-[200px] bg-gradient-to-r from-blue-500/5 to-purple-500/5 hover:from-blue-500/20 hover:to-purple-500/20 transition-all duration-300 hover:scale-105"
+                  className="text-2xl py-6 px-8 rounded-full min-w-[200px] bg-gradient-to-r from-sky-500/5 to-cyan-500/5 hover:from-sky-500/20 hover:to-cyan-500/20 transition-all duration-300 hover:scale-105"
                   asChild
                   onClick={() => setIsOpen(false)}
                 >
