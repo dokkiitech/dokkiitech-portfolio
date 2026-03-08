@@ -101,17 +101,29 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
 
   useEffect(() => {
     if (mode !== "terminal") return
-    const sessionId = Date.now()
-    typingSessionRef.current = sessionId
-    setHistory([])
-    setTimeout(() => terminalInputRef.current?.focus(), 60)
-    typeLines(
-      [
-        "Portfolio terminalへようこそ。",
-        "help でコマンド一覧を表示できます。",
-      ],
-      sessionId
-    )
+
+    const boot = () => {
+      const sessionId = Date.now()
+      typingSessionRef.current = sessionId
+      setHistory([])
+      setTimeout(() => terminalInputRef.current?.focus(), 60)
+      typeLines(
+        [
+          "Portfolio terminalへようこそ。",
+          "help でコマンド一覧を表示できます。",
+        ],
+        sessionId
+      )
+    }
+
+    const splashActive = (window as unknown as { __DOKKII_SPLASH_ACTIVE?: boolean }).__DOKKII_SPLASH_ACTIVE
+    if (splashActive) {
+      const onSplashDone = () => boot()
+      window.addEventListener("dokkii:splash-finished", onSplashDone, { once: true })
+      return () => window.removeEventListener("dokkii:splash-finished", onSplashDone)
+    }
+
+    boot()
   }, [mode])
 
   const handleCd = async (rawTarget: string, sessionId: number) => {

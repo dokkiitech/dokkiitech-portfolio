@@ -39,6 +39,7 @@ export function FirstVisitLoader() {
 
   useEffect(() => {
     setShow(true)
+    ;(window as unknown as { __DOKKII_SPLASH_ACTIVE?: boolean }).__DOKKII_SPLASH_ACTIVE = true
 
     const intervalMs = 260
     const lineTimer = setInterval(() => {
@@ -50,6 +51,8 @@ export function FirstVisitLoader() {
       setTimeout(() => {
         setShow(false)
         setClosing(false)
+        ;(window as unknown as { __DOKKII_SPLASH_ACTIVE?: boolean }).__DOKKII_SPLASH_ACTIVE = false
+        window.dispatchEvent(new CustomEvent("dokkii:splash-finished"))
       }, 360)
     }, intervalMs * logs.length + 1000)
 
