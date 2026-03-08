@@ -41,7 +41,7 @@ const pageMap: Record<string, string> = {
   sns: "/contact",
   contact: "/contact",
 }
-const rootCommands = ["help", "ls", "profile", "blog", "product", "sns", "appointment", "clear", "cd"] as const
+const rootCommands = ["help", "ls", "profile", "blog", "product", "contact", "appointment", "clear", "cd"] as const
 const cdTargets = ["home", "profile", "blog", "products", "contact", "appointment"] as const
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -58,7 +58,7 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
 
   const commandMap = useMemo(
     () => ({
-      help: ["利用可能: help, ls, profile, blog, product, sns, appointment, cd <page>, clear"],
+      help: ["利用可能: help, ls, profile, blog, product, contact, appointment, cd <page>, clear"],
       ls: [
         "/home /profile /blog /products /contact /appointment",
       ],
@@ -99,6 +99,7 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
       blog: blogArticles.slice(0, 3).map((item) => `- ${item.title}`),
       product: productArticles.slice(0, 3).map((item) => `- ${item.title}`),
       sns: snsLinks.map((item) => `- ${item.label}: ${item.href}`),
+      contact: snsLinks.map((item) => `- ${item.label}: ${item.href}`),
       booking: ["予約ページ: /appointment", "cd booking で移動できます。"],
       appointment: ["予約ページ: /appointment", "cd appointment で移動できます。"],
     }),
