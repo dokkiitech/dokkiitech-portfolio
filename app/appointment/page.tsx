@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 
+const fallbackSlots = Array.from({ length: 14 }, (_, idx) => `${String(10 + idx).padStart(2, "0")}:00`)
+
 export default function AppointPage() {
   const [serverMessage, setServerMessage] = useState("")
   const [submitting, setSubmitting] = useState(false)
@@ -54,7 +56,9 @@ export default function AppointPage() {
             const dateStr = format(date, "yyyy-MM-dd")
             const response = await fetch(`/api/bookings?date=${dateStr}&bookingType=${encodeURIComponent(bookingType)}`)
             const json = await response.json().catch(() => ({ ok: false, slots: [] }))
-            const isAvailable = json.ok && Array.isArray(json.slots) && json.slots.length > 0
+            const isAvailable = !response.ok || !json.ok
+              ? true
+              : Array.isArray(json.slots) && json.slots.length > 0
             return { dateStr, isAvailable }
           })
         )
@@ -82,9 +86,13 @@ export default function AppointPage() {
       try {
         const response = await fetch(`/api/bookings?date=${dateStr}&bookingType=${encodeURIComponent(bookingType)}`)
         const json = await response.json()
-        setAvailableSlots(json.ok && Array.isArray(json.slots) ? json.slots : [])
+        if (response.ok && json.ok && Array.isArray(json.slots)) {
+          setAvailableSlots(json.slots)
+        } else {
+          setAvailableSlots(fallbackSlots)
+        }
       } catch {
-        setAvailableSlots([])
+        setAvailableSlots(fallbackSlots)
       } finally {
         setLoadingSlots(false)
       }
