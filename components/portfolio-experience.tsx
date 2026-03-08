@@ -93,11 +93,6 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
               return `${item.language.padEnd(14, " ")} [${bar}] ${item.percentage}%`
             })
           : ["(stack data unavailable)"]),
-        "SNS ID:",
-        "[X]          @dokkiitech",
-        "[Instagram]  @dokkiitech",
-        "[Zenn]       @dokkiitech",
-        "[GitHub]     @dokkiitech",
       ],
       blog: blogArticles.slice(0, 3).map((item) => `- ${item.title}`),
       product: productArticles.slice(0, 3).map((item) => `- ${item.title}`),
