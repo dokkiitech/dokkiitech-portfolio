@@ -18,7 +18,7 @@ interface TerminalLine {
   text: string
 }
 
-const prompt = "dokkii@portfolio:~$"
+const prompt = "dokkiitech@portfolio:~$"
 const snsLinks = [
   { label: "X", href: "https://x.com/dokkiitech" },
   { label: "GitHub", href: "https://github.com/dokkiitech" },
@@ -98,7 +98,6 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
     typeLines(
       [
         "Portfolio terminalへようこそ。",
-        "一文字ずつログを表示しています...",
         "help でコマンド一覧を表示できます。",
       ],
       sessionId
