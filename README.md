@@ -57,7 +57,8 @@ BOOKING_API_KEY=
   "name": "山田 太郎",
   "email": "taro@example.com",
   "bookingType": "meet",
-  "date": "2026-03-15 14:00",
+  "date": "2026-03-15",
+  "timeSlot": "14:00",
   "agenda": "新規プロダクト相談",
   "location": "渋谷"
 }

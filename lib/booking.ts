@@ -8,6 +8,7 @@ export const bookingSchema = z
       message: "予約タイプを選択してください",
     }),
     date: z.string().min(1, "希望日時を入力してください"),
+    timeSlot: z.string().min(1, "時間帯を選択してください"),
     agenda: z.string().min(5, "相談内容は5文字以上で入力してください"),
     location: z.string().optional(),
   })
