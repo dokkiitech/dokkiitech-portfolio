@@ -10,6 +10,7 @@ const DEFAULT_OFFSET = process.env.BOOKING_TIMEZONE_OFFSET || "+09:00"
 const SLOT_MINUTES = Number(process.env.BOOKING_SLOT_MINUTES || "60")
 const SLOT_START_HOUR = Number(process.env.BOOKING_SLOT_START_HOUR || "10")
 const SLOT_END_HOUR = Number(process.env.BOOKING_SLOT_END_HOUR || "24")
+const IN_PERSON_MIN_LEAD_DAYS = 2
 
 type BookingMode = "mock" | "gcp"
 
@@ -50,6 +51,28 @@ function getDefaultSlots(date: string) {
 function isPastSlot(date: string, timeSlot: string): boolean {
   const { startDateTime } = getStartEnd(date, timeSlot)
   return new Date(startDateTime).getTime() <= Date.now()
+}
+
+function getTodayInTimezone(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: DEFAULT_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date())
+}
+
+function addDays(date: string, days: number): string {
+  const [y, m, d] = date.split("-").map(Number)
+  const base = new Date(Date.UTC(y, m - 1, d))
+  base.setUTCDate(base.getUTCDate() + days)
+  return base.toISOString().slice(0, 10)
+}
+
+function isInPersonLeadTimeInvalid(bookingType: "meet" | "対面", date: string): boolean {
+  if (bookingType !== "対面") return false
+  const minDate = addDays(getTodayInTimezone(), IN_PERSON_MIN_LEAD_DAYS)
+  return date < minDate
 }
 
 function envOrThrow(key: string): string {
@@ -195,8 +218,19 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const date = searchParams.get("date")
+    const bookingType = (searchParams.get("bookingType") || "meet") as "meet" | "対面"
     if (!date) {
       return NextResponse.json({ ok: false, message: "date(YYYY-MM-DD) が必要です。" }, { status: 400 })
+    }
+
+    if (isInPersonLeadTimeInvalid(bookingType, date)) {
+      return NextResponse.json({
+        ok: true,
+        mode: getMode(),
+        date,
+        slots: [],
+        leadTimeMessage: "対面の予約は2日前から可能です。",
+      })
     }
 
     const mode = getMode()
@@ -240,6 +274,13 @@ export async function POST(request: Request) {
 
     const payload = parsed.data
     const mode = getMode()
+
+    if (isInPersonLeadTimeInvalid(payload.bookingType, payload.date)) {
+      return NextResponse.json(
+        { ok: false, mode, message: "対面の予約は2日前から可能です。別の日付を選択してください。" },
+        { status: 400 }
+      )
+    }
 
     if (isPastSlot(payload.date, payload.timeSlot)) {
       return NextResponse.json(

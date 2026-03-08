@@ -5,6 +5,7 @@ import { cancelPortalBooking, updatePortalBooking, verifyPortalAccess } from "@/
 const DEFAULT_TIMEZONE = process.env.BOOKING_TIMEZONE || "Asia/Tokyo"
 const DEFAULT_OFFSET = process.env.BOOKING_TIMEZONE_OFFSET || "+09:00"
 const SLOT_MINUTES = Number(process.env.BOOKING_SLOT_MINUTES || "60")
+const IN_PERSON_MIN_LEAD_DAYS = 2
 
 function getMode() {
   return (process.env.BOOKING_BACKEND_MODE || "mock").toLowerCase()
@@ -18,6 +19,28 @@ function getStartEnd(date: string, timeSlot: string) {
     startDateTime: startAt.toISOString(),
     endDateTime: endAt.toISOString(),
   }
+}
+
+function getTodayInTimezone(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: DEFAULT_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date())
+}
+
+function addDays(date: string, days: number): string {
+  const [y, m, d] = date.split("-").map(Number)
+  const base = new Date(Date.UTC(y, m - 1, d))
+  base.setUTCDate(base.getUTCDate() + days)
+  return base.toISOString().slice(0, 10)
+}
+
+function isInPersonLeadTimeInvalid(bookingType: "meet" | "対面", date: string): boolean {
+  if (bookingType !== "対面") return false
+  const minDate = addDays(getTodayInTimezone(), IN_PERSON_MIN_LEAD_DAYS)
+  return date < minDate
 }
 
 function envOrThrow(key: string): string {
@@ -133,6 +156,13 @@ export async function PATCH(
     const nextLocation = body.location !== undefined ? String(body.location || "") : checked.record.location
     const nextAgenda = body.agenda ? String(body.agenda) : checked.record.agenda
     const nextCompany = body.company !== undefined ? String(body.company || "") : checked.record.company
+
+    if (isInPersonLeadTimeInvalid(nextBookingType, nextDate)) {
+      return NextResponse.json(
+        { ok: false, message: "対面の予約は2日前から可能です。別の日付を選択してください。" },
+        { status: 400 }
+      )
+    }
 
     let calendarEventUrl = checked.record.calendar_event_url
     let meetUrl = checked.record.meet_url
