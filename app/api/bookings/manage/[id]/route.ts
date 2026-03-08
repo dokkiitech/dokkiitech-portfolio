@@ -167,6 +167,17 @@ async function sendResendMail(to: string, subject: string, html: string) {
   return { sent: true }
 }
 
+function formatDateJp(date: string): string {
+  const [y, m, d] = date.split("-")
+  return `${y}年${m}月${d}日`
+}
+
+function calcEndTime(timeSlot: string): string {
+  const start = new Date(`2000-01-01T${timeSlot}:00+09:00`)
+  const end = new Date(start.getTime() + SLOT_MINUTES * 60 * 1000)
+  return `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -288,19 +299,23 @@ export async function PATCH(
       meet_url: meetUrl || null,
     })
 
+    const dateJp = formatDateJp(nextDate)
+    const endTime = calcEndTime(nextTimeSlot)
+    const salutation = `${nextCompany ? `${nextCompany} ` : ""}${checked.record.name}さま`
+    const formatLine = nextBookingType === "meet" ? "Google Meet" : `対面（${nextLocation || "-"})`
     const resend = await sendResendMail(
       checked.record.email,
       "予約変更のお知らせ",
       `
-      <p>${checked.record.name}様</p>
-      <p>予約内容が変更されました。</p>
+      <p>${salutation}</p>
+      <p>お打ち合わせの予約内容を変更しました。下記の内容で更新されました。</p>
       <ul>
-        <li>日付: ${nextDate}</li>
-        <li>時間: ${nextTimeSlot}</li>
-        <li>形式: ${nextBookingType}</li>
-        <li>Meet URL: ${meetUrl || "-"}</li>
-        <li>場所: ${nextBookingType === "対面" ? nextLocation || "-" : "-"}</li>
+        <li>日程：${dateJp}</li>
+        <li>時刻：${nextTimeSlot} - ${endTime}</li>
+        <li>形式：${formatLine}</li>
+        ${meetUrl ? `<li>Meet URL：${meetUrl}</li>` : ""}
       </ul>
+      <p>Googleカレンダーの予定にも変更内容が反映されます。</p>
       `
     )
 
@@ -354,17 +369,25 @@ export async function DELETE(
     }
 
     const canceled = await cancelPortalBooking(id)
+    const dateJp = formatDateJp(checked.record.date)
+    const endTime = calcEndTime(checked.record.time_slot)
+    const salutation = `${checked.record.company ? `${checked.record.company} ` : ""}${checked.record.name}さま`
+    const formatLine =
+      checked.record.booking_type === "meet"
+        ? "Google Meet"
+        : `対面（${checked.record.location || "-"})`
     const resend = await sendResendMail(
       checked.record.email,
       "予約キャンセルのお知らせ",
       `
-      <p>${checked.record.name}様</p>
-      <p>以下の予約はキャンセルされました。</p>
+      <p>${salutation}</p>
+      <p>お打ち合わせのご予約をキャンセルしました。下記の内容がキャンセル対象です。</p>
       <ul>
-        <li>日付: ${checked.record.date}</li>
-        <li>時間: ${checked.record.time_slot}</li>
-        <li>形式: ${checked.record.booking_type}</li>
+        <li>日程：${dateJp}</li>
+        <li>時刻：${checked.record.time_slot} - ${endTime}</li>
+        <li>形式：${formatLine}</li>
       </ul>
+      <p>Googleカレンダーの予定もキャンセルされます。</p>
       `
     )
     return NextResponse.json({
