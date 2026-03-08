@@ -33,9 +33,11 @@ const pageMap: Record<string, string> = {
   blog: "/blog",
   product: "/products",
   products: "/products",
-  booking: "/appoint",
-  appoint: "/appoint",
-  sns: "/sns",
+  booking: "/appointment",
+  appoint: "/appointment",
+  appointment: "/appointment",
+  sns: "/contact",
+  contact: "/contact",
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -57,7 +59,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
       blog: blogArticles.slice(0, 3).map((item) => `- ${item.title}`),
       product: productArticles.slice(0, 3).map((item) => `- ${item.title}`),
       sns: snsLinks.map((item) => `- ${item.label}: ${item.href}`),
-      booking: ["予約ページ: /appoint", "cd booking で移動できます。"],
+      booking: ["予約ページ: /appointment", "cd booking で移動できます。"],
     }),
     [blogArticles, productArticles]
   )
@@ -292,7 +294,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
                 打ち合わせ予約は `meet / 対面` に対応しています。対面の場合は場所指定ありで調整します。
                 連絡は `info@dokkiitech.com` でも可能です。
               </p>
-              <Link href="/appoint" className="mt-4 inline-block rounded-lg border border-cyan-400/40 bg-cyan-500/10 px-4 py-2 text-cyan-100">
+              <Link href="/appointment" className="mt-4 inline-block rounded-lg border border-cyan-400/40 bg-cyan-500/10 px-4 py-2 text-cyan-100">
                 予約フォームを開く
               </Link>
             </article>

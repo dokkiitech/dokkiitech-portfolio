@@ -12,8 +12,8 @@ const navigation = [
   { name: "プロフィール", href: "/profile" },
   { name: "ブログ", href: "/blog" },
   { name: "Product", href: "/products" },
-  { name: "SNS", href: "/sns" },
-  { name: "予約", href: "/appoint" },
+  { name: "SNS", href: "/contact" },
+  { name: "予約", href: "/appointment" },
 ]
 
 export function Navigation() {
