@@ -205,15 +205,15 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
       return
     }
 
+    setCommand("")
+
     if (lower === "cd") {
       await typeLines(["usage: cd <page>", "例: cd /blog  または cd appointment"], sessionId)
-      setCommand("")
       return
     }
 
     if (lower.startsWith("cd ")) {
       await handleCd(raw.slice(3), sessionId)
-      setCommand("")
       return
     }
 
@@ -223,7 +223,6 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
     ]
 
     await typeLines(outputs, sessionId)
-    setCommand("")
   }
 
   const handleTabCompletion = () => {
