@@ -7,16 +7,8 @@ export const runtime = "nodejs"
 const DEFAULT_TIMEZONE = process.env.BOOKING_TIMEZONE || "Asia/Tokyo"
 const DEFAULT_OFFSET = process.env.BOOKING_TIMEZONE_OFFSET || "+09:00"
 const SLOT_MINUTES = Number(process.env.BOOKING_SLOT_MINUTES || "60")
-
-const DEFAULT_WEEKLY_SLOTS: Record<number, string[]> = {
-  0: [],
-  1: ["11:00", "13:00", "15:00", "20:00"],
-  2: ["11:00", "14:00", "16:00", "21:00"],
-  3: ["11:00", "13:00", "17:00", "22:00"],
-  4: ["12:00", "14:00", "18:00", "21:00"],
-  5: ["11:00", "13:00", "15:00", "19:00"],
-  6: ["12:00", "16:00", "20:00"],
-}
+const SLOT_START_HOUR = Number(process.env.BOOKING_SLOT_START_HOUR || "10")
+const SLOT_END_HOUR = Number(process.env.BOOKING_SLOT_END_HOUR || "24")
 
 type BookingMode = "mock" | "gcp"
 
@@ -35,12 +27,14 @@ function getStartEnd(date: string, timeSlot: string) {
   }
 }
 
-function getDateWeekday(date: string): number {
-  return new Date(`${date}T00:00:00${DEFAULT_OFFSET}`).getDay()
-}
-
 function getDefaultSlots(date: string) {
-  return DEFAULT_WEEKLY_SLOTS[getDateWeekday(date)] || []
+  const start = Math.max(0, Math.min(23, SLOT_START_HOUR))
+  const end = Math.max(start + 1, Math.min(24, SLOT_END_HOUR))
+  void date
+  return Array.from({ length: end - start }, (_, idx) => {
+    const hour = start + idx
+    return `${String(hour).padStart(2, "0")}:00`
+  })
 }
 
 function envOrThrow(key: string): string {
