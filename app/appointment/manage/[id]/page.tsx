@@ -27,10 +27,18 @@ interface ManageRecord {
 
 type Step = "loading" | "set-password" | "login" | "manage" | "error"
 
-function buildFallbackSlots(date: string): string[] {
+function formatSlotRange(slot: string): string {
+  const start = new Date(`2000-01-01T${slot}:00+09:00`)
+  const end = new Date(start.getTime() + 60 * 60 * 1000)
+  const endText = `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`
+  return `${slot} - ${endText}`
+}
+
+function buildFallbackSlots(date: string, bookingType: "meet" | "対面"): string[] {
+  const threshold = bookingType === "meet" ? Date.now() + 60 * 60 * 1000 : Date.now()
   return Array.from({ length: 14 }, (_, idx) => `${String(10 + idx).padStart(2, "0")}:00`).filter((slot) => {
     const slotStart = new Date(`${date}T${slot}:00+09:00`)
-    return slotStart.getTime() > Date.now()
+    return slotStart.getTime() > threshold
   })
 }
 
@@ -97,11 +105,13 @@ export default function ManageBookingPage() {
     try {
       const response = await fetch(`/api/bookings?date=${dateStr}&bookingType=${encodeURIComponent(record?.bookingType || "meet")}`)
       const json = await response.json()
-      const fromApi = response.ok && json.ok && Array.isArray(json.slots) ? (json.slots as string[]) : buildFallbackSlots(dateStr)
+      const fromApi = response.ok && json.ok && Array.isArray(json.slots)
+        ? (json.slots as string[])
+        : buildFallbackSlots(dateStr, record?.bookingType || "meet")
       const merged = currentTimeSlot && !fromApi.includes(currentTimeSlot) ? [currentTimeSlot, ...fromApi] : fromApi
       setAvailableSlots(Array.from(new Set(merged)))
     } catch {
-      const fallback = buildFallbackSlots(dateStr)
+      const fallback = buildFallbackSlots(dateStr, record?.bookingType || "meet")
       const merged = currentTimeSlot && !fallback.includes(currentTimeSlot) ? [currentTimeSlot, ...fallback] : fallback
       setAvailableSlots(Array.from(new Set(merged)))
     } finally {
@@ -233,7 +243,7 @@ export default function ManageBookingPage() {
               {loadingSlots ? (
                 <p className="mt-2 text-sm text-muted-foreground">空き時間を照会中...</p>
               ) : availableSlots.length > 0 ? (
-                <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
                   {availableSlots.map((slot) => (
                     <label key={slot} className="flex cursor-pointer items-center gap-2 rounded-md border border-border p-2">
                       <input
@@ -242,7 +252,7 @@ export default function ManageBookingPage() {
                         checked={form.timeSlot === slot}
                         onChange={() => setForm((prev) => ({ ...prev, timeSlot: slot }))}
                       />
-                      <span>{slot}</span>
+                      <span>{formatSlotRange(slot)}</span>
                     </label>
                   ))}
                 </div>
