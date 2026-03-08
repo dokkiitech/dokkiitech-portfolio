@@ -38,12 +38,19 @@ export default async function ProfilePage() {
         <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
           <p className="text-xs tracking-[0.25em] text-cyan-300">PROFILE / DOKKIITECH</p>
           <h1 className="mt-3 text-4xl font-bold">木戸亮輔</h1>
-          <p className="mt-6 leading-8 text-muted-foreground">
-            初めまして或いはこんにちは。木戸です。28卒の学生エンジニアです。主領域はバックエンドです。その他にもインフラ周りやフロントエンドも適度にできる自称フロンエンドエンジニアです。
-            様々なIT団体を運営し自身の技術力向上と共に地域のIT文化の活性化をするための活動をしています。また自宅サーバー dokkiitech Regionを運営し自身のプロダクトを幅広く更新しています。
-            当サイトでは作ってきた作品の公開やブログ、私の使用技術の確認やお打ち合わせの予約ができます。気が向いた時にのんびり遊んでみてください。
-            当サイトのTerminal UIに困惑された方もいらっしゃると思います。ごめんなさい。非エンジニアの方でも一応見れる設定になっていますのでよければもっと覗いてください。
-          </p>
+          <div className="mt-6 space-y-3 leading-8 text-muted-foreground">
+            <p>初めまして或いはこんにちは</p>
+            <p>木戸です。</p>
+            <p>28卒の学生エンジニアです。</p>
+            <p>主領域はバックエンドです。</p>
+            <p>その他にもインフラ周りやフロントエンドも適度にできる自称フロンエンドエンジニアです。</p>
+            <p>様々なIT団体を運営し自身の技術力向上と共に地域のIT文化の活性化をするための活動をしています。</p>
+            <p>また自宅サーバー dokkiitech Regionを運営し自身のプロダクトを幅広く更新しています。</p>
+            <p>当サイトでは作ってきた作品の公開やブログ、私の使用技術の確認やお打ち合わせの予約ができます。</p>
+            <p>気が向いた時にのんびり遊んでみてください。</p>
+            <p>当サイトのTerminal UIに困惑された方もいらっしゃると思います。ごめんなさい。</p>
+            <p>非エンジニアの方でも一応見れる設定になっていますのでよければもっと覗いてください。</p>
+          </div>
         </div>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">

@@ -273,9 +273,12 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
             <article id="profile" className="rounded-3xl border border-border bg-card p-7 shadow-sm">
               <p className="text-xs tracking-[0.25em] text-cyan-300">PROFILE</p>
               <h2 className="mt-2 text-3xl font-bold">木戸亮輔 / DOKKIITECH</h2>
-              <p className="mt-4 max-w-3xl text-muted-foreground">
-                初めまして或いはこんにちは、木戸です。28卒の学生エンジニアです。主領域はバックエンドで、インフラ周りやフロントエンドも適度に扱います。様々なIT団体を運営し、技術力向上と地域のIT文化活性化に取り組んでいます。自宅サーバー「dokkiitech Region」でプロダクト更新も継続しています。
-              </p>
+              <div className="mt-4 max-w-3xl space-y-2 text-muted-foreground">
+                <p>初めまして或いはこんにちは。木戸です。28卒の学生エンジニアです。</p>
+                <p>主領域はバックエンドです。その他にもインフラ周りやフロントエンドも適度にできる自称フロンエンドエンジニアです。</p>
+                <p>様々なIT団体を運営し自身の技術力向上と共に地域のIT文化の活性化をするための活動をしています。</p>
+                <p>また自宅サーバー dokkiitech Regionを運営し自身のプロダクトを幅広く更新しています。</p>
+              </div>
               <div className="mt-5 flex flex-wrap gap-2">
                 {["Next.js", "TypeScript", "Go", "Docker", "AWS", "Security"].map((tag) => (
                   <span key={tag} className="rounded-full border border-cyan-400/40 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-100">
