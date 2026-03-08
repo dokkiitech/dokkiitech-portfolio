@@ -195,7 +195,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
                       void execute()
                     }
                   }}
-                  className="w-full bg-transparent text-slate-100 outline-none"
+                  className="w-full bg-transparent text-base text-slate-100 outline-none md:text-sm"
                   placeholder={isTyping ? "出力中..." : "コマンドを入力 (例: cd blog)"}
                 />
               </label>
