@@ -12,7 +12,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 
-const fallbackSlots = Array.from({ length: 14 }, (_, idx) => `${String(10 + idx).padStart(2, "0")}:00`)
+function buildFallbackSlots(dateStr: string): string[] {
+  return Array.from({ length: 14 }, (_, idx) => `${String(10 + idx).padStart(2, "0")}:00`).filter((slot) => {
+    const slotStart = new Date(`${dateStr}T${slot}:00+09:00`)
+    return slotStart.getTime() > Date.now()
+  })
+}
 
 export default function AppointPage() {
   const [serverMessage, setServerMessage] = useState("")
@@ -82,6 +87,7 @@ export default function AppointPage() {
 
     const fetchAvailability = async () => {
       const dateStr = format(selectedDate, "yyyy-MM-dd")
+      const fallbackSlots = buildFallbackSlots(dateStr)
       setLoadingSlots(true)
       try {
         const response = await fetch(`/api/bookings?date=${dateStr}&bookingType=${encodeURIComponent(bookingType)}`)
