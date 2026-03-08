@@ -204,8 +204,15 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
             <article id="profile" className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
               <h2 className="mb-3 text-2xl font-semibold">プロフィール</h2>
               <p className="text-slate-300">
-                木戸亮輔（DOKKIITECH）。Webアプリ開発とプロダクトづくりを軸に活動し、技術ナレッジをZennで発信しています。
+                木戸亮輔（DOKKIITECH）。セキュリティ学習を土台に、Next.js / TypeScript / Go を使ったフルスタック開発を進めています。Zennで開発ログや検証記事を継続的に発信中です。
               </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {["Next.js", "TypeScript", "Go", "Docker", "AWS", "Security"].map((tag) => (
+                  <span key={tag} className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </article>
 
             <article id="blog" className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
