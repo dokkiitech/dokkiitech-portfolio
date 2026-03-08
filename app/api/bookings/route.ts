@@ -53,6 +53,11 @@ function isPastSlot(date: string, timeSlot: string): boolean {
   return new Date(startDateTime).getTime() <= Date.now()
 }
 
+function isMeetTooSoon(date: string, timeSlot: string): boolean {
+  const { startDateTime } = getStartEnd(date, timeSlot)
+  return new Date(startDateTime).getTime() <= Date.now() + 60 * 60 * 1000
+}
+
 function getTodayInTimezone(): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: DEFAULT_TIMEZONE,
@@ -249,7 +254,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const date = searchParams.get("date")
-    const bookingType = (searchParams.get("bookingType") || "meet") as "meet" | "対面"
+    const bookingType = searchParams.get("bookingType") === "対面" ? "対面" : "meet"
     if (!date) {
       return NextResponse.json({ ok: false, message: "date(YYYY-MM-DD) が必要です。" }, { status: 400 })
     }
@@ -266,7 +271,9 @@ export async function GET(request: Request) {
 
     const mode = getMode()
     if (mode === "mock") {
-      const slots = getDefaultSlots(date).filter((slot) => !isPastSlot(date, slot))
+      const slots = getDefaultSlots(date).filter((slot) =>
+        bookingType === "meet" ? !isMeetTooSoon(date, slot) : !isPastSlot(date, slot)
+      )
       return NextResponse.json({
         ok: true,
         mode,
@@ -286,7 +293,9 @@ export async function GET(request: Request) {
         allDayBusyMessage: "この日は終日予定が入っているため予約できません。",
       })
     }
-    const slots = (await listAvailableSlots(accessToken, calendarId, date)).filter((slot) => !isPastSlot(date, slot))
+    const slots = (await listAvailableSlots(accessToken, calendarId, date)).filter((slot) =>
+      bookingType === "meet" ? !isMeetTooSoon(date, slot) : !isPastSlot(date, slot)
+    )
     return NextResponse.json({ ok: true, mode, date, slots })
   } catch (error) {
     return NextResponse.json(
@@ -318,6 +327,13 @@ export async function POST(request: Request) {
     if (isInPersonLeadTimeInvalid(payload.bookingType, payload.date)) {
       return NextResponse.json(
         { ok: false, mode, message: "対面の予約は2日前から可能です。別の日付を選択してください。" },
+        { status: 400 }
+      )
+    }
+
+    if (payload.bookingType === "meet" && isMeetTooSoon(payload.date, payload.timeSlot)) {
+      return NextResponse.json(
+        { ok: false, mode, message: "Meet予約は1時間後以降の時間帯を選択してください。" },
         { status: 400 }
       )
     }

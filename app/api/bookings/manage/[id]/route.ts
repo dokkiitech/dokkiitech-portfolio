@@ -21,6 +21,16 @@ function getStartEnd(date: string, timeSlot: string) {
   }
 }
 
+function isPastSlot(date: string, timeSlot: string): boolean {
+  const { startDateTime } = getStartEnd(date, timeSlot)
+  return new Date(startDateTime).getTime() <= Date.now()
+}
+
+function isMeetTooSoon(date: string, timeSlot: string): boolean {
+  const { startDateTime } = getStartEnd(date, timeSlot)
+  return new Date(startDateTime).getTime() <= Date.now() + 60 * 60 * 1000
+}
+
 function getTodayInTimezone(): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: DEFAULT_TIMEZONE,
@@ -185,6 +195,18 @@ export async function PATCH(
     const nextAgenda = body.agenda ? String(body.agenda) : checked.record.agenda
     const nextCompany = body.company !== undefined ? String(body.company || "") : checked.record.company
 
+    if (isPastSlot(nextDate, nextTimeSlot)) {
+      return NextResponse.json(
+        { ok: false, message: "過去の時間帯は予約できません。未来の時間を選択してください。" },
+        { status: 400 }
+      )
+    }
+    if (nextBookingType === "meet" && isMeetTooSoon(nextDate, nextTimeSlot)) {
+      return NextResponse.json(
+        { ok: false, message: "Meet予約は1時間後以降の時間帯を選択してください。" },
+        { status: 400 }
+      )
+    }
     if (isInPersonLeadTimeInvalid(nextBookingType, nextDate)) {
       return NextResponse.json(
         { ok: false, message: "対面の予約は2日前から可能です。別の日付を選択してください。" },

@@ -13,19 +13,22 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 
-function buildFallbackSlots(dateStr: string): string[] {
+function buildFallbackSlots(dateStr: string, bookingType: "meet" | "対面"): string[] {
+  const threshold = bookingType === "meet" ? Date.now() + 60 * 60 * 1000 : Date.now()
   return Array.from({ length: 14 }, (_, idx) => `${String(10 + idx).padStart(2, "0")}:00`).filter((slot) => {
     const slotStart = new Date(`${dateStr}T${slot}:00+09:00`)
-    return slotStart.getTime() > Date.now()
+    return slotStart.getTime() > threshold
   })
 }
 
 export default function AppointPage() {
+  const initialDate = useMemo(() => new Date(new Date().setHours(0, 0, 0, 0)), [])
+  const initialDateStr = useMemo(() => format(initialDate, "yyyy-MM-dd"), [initialDate])
   const [serverMessage, setServerMessage] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [successInfo, setSuccessInfo] = useState<{ date: string; timeSlot: string; bookingType: string } | null>(null)
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>()
-  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date())
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialDate)
+  const [calendarMonth, setCalendarMonth] = useState<Date>(initialDate)
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [disabledDateKeys, setDisabledDateKeys] = useState<Set<string>>(new Set())
@@ -41,6 +44,7 @@ export default function AppointPage() {
     resolver: zodResolver(bookingSchema),
     defaultValues: {
       bookingType: "meet",
+      date: initialDateStr,
       timeSlot: "",
     },
   })
@@ -89,7 +93,7 @@ export default function AppointPage() {
 
     const fetchAvailability = async () => {
       const dateStr = format(selectedDate, "yyyy-MM-dd")
-      const fallbackSlots = buildFallbackSlots(dateStr)
+      const fallbackSlots = buildFallbackSlots(dateStr, bookingType)
       setLoadingSlots(true)
       try {
         const response = await fetch(`/api/bookings?date=${dateStr}&bookingType=${encodeURIComponent(bookingType)}`)
