@@ -178,8 +178,7 @@ export default function ManageBookingPage() {
       }),
     })
     const json = await response.json()
-    const resendState = json.resend ? (json.resend.sent ? "Resend: 送信成功" : `Resend: 送信失敗 (${json.resend.reason || "unknown"})`) : ""
-    setMessage([json.message, resendState, json.error].filter(Boolean).join("\n"))
+    setMessage([json.message, json.error].filter(Boolean).join("\n"))
   }
 
   const onCancel = async () => {
@@ -189,8 +188,7 @@ export default function ManageBookingPage() {
       body: JSON.stringify({ token, password }),
     })
     const json = await response.json()
-    const resendState = json.resend ? (json.resend.sent ? "Resend: 送信成功" : `Resend: 送信失敗 (${json.resend.reason || "unknown"})`) : ""
-    setMessage([json.message, resendState, json.error].filter(Boolean).join("\n"))
+    setMessage([json.message, json.error].filter(Boolean).join("\n"))
   }
 
   return (
