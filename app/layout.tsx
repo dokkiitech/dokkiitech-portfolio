@@ -12,6 +12,28 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "DOKKIITECH",
   description: "木戸亮輔(dokkiitech)のポートフォリオサイトです。ターミナルUIを採用した楽しいポートフォリオを皆様に提供しています。木戸亮輔について知れることはもちろん、お打ち合わせのご予約もこちらから行なっていただけます。",
+  metadataBase: new URL("https://www.dokkiitech.com"),
+  openGraph: {
+    title: "DOKKIITECH",
+    description: "木戸亮輔(dokkiitech)のポートフォリオサイトです。ターミナルUIを採用した楽しいポートフォリオを皆様に提供しています。木戸亮輔について知れることはもちろん、お打ち合わせのご予約もこちらから行なっていただけます。",
+    url: "https://www.dokkiitech.com",
+    siteName: "DOKKIITECH",
+    locale: "ja_JP",
+    type: "website",
+    images: [
+      {
+        url: "/ogp.PNG",
+        width: 1200,
+        height: 630,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DOKKIITECH",
+    description: "木戸亮輔(dokkiitech)のポートフォリオサイトです。ターミナルUIを採用した楽しいポートフォリオを皆様に提供しています。木戸亮輔について知れることはもちろん、お打ち合わせのご予約もこちらから行なっていただけます。",
+    images: ["/ogp.PNG"],
+  },
   manifest: '/site.webmanifest',
   icons: {
     icon: [
