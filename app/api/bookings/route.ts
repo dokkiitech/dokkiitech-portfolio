@@ -234,7 +234,7 @@ export async function POST(request: Request) {
     }
 
     if (mode === "mock") {
-      let portal: { id: string; token: string; expiresAt: string } | null = null
+      let portal: { id: string; token: string; expiresAt: string; initialPassword: string } | null = null
       try {
         portal = await createBookingPortal({
           bookingId: `mock_${Date.now()}`,
@@ -274,6 +274,7 @@ export async function POST(request: Request) {
               id: portal.id,
               expiresAt: portal.expiresAt,
               url: buildManageUrl(portal.id, portal.token),
+              initialPassword: portal.initialPassword,
             }
           : null,
       })
@@ -337,25 +338,7 @@ export async function POST(request: Request) {
       location?: string
     }
 
-    const mailResult = await sendResendMail(
-      payload.email,
-      "予約完了のお知らせ",
-      `
-      <p>${payload.name} 様</p>
-      <p>ご予約ありがとうございます。以下内容で受け付けました。</p>
-      <ul>
-        <li>日付: ${payload.date}</li>
-        <li>時間: ${payload.timeSlot}</li>
-        <li>形式: ${payload.bookingType}</li>
-        <li>会社名: ${payload.company || "-"}</li>
-        <li>Meet URL: ${event.hangoutLink || "カレンダー招待をご確認ください"}</li>
-        <li>場所: ${payload.bookingType === "対面" ? payload.location || "-" : "-"}</li>
-      </ul>
-      <p>カレンダー招待メールも送信されています。</p>
-      `
-    )
-
-    let portal: { id: string; token: string; expiresAt: string } | null = null
+    let portal: { id: string; token: string; expiresAt: string; initialPassword: string } | null = null
     try {
       portal = await createBookingPortal({
         bookingId: event.id || `evt_${Date.now()}`,
@@ -375,6 +358,31 @@ export async function POST(request: Request) {
       console.error("Failed to create booking portal (gcp):", error)
     }
 
+    const manageUrl = portal ? buildManageUrl(portal.id, portal.token) : ""
+    const mailResult = await sendResendMail(
+      payload.email,
+      "予約完了のお知らせ",
+      `
+      <p>${payload.name} 様</p>
+      <p>ご予約ありがとうございます。以下内容で受け付けました。</p>
+      <ul>
+        <li>日付: ${payload.date}</li>
+        <li>時間: ${payload.timeSlot}</li>
+        <li>形式: ${payload.bookingType}</li>
+        <li>会社名: ${payload.company || "-"}</li>
+        <li>Meet URL: ${event.hangoutLink || "カレンダー招待をご確認ください"}</li>
+        <li>場所: ${payload.bookingType === "対面" ? payload.location || "-" : "-"}</li>
+      </ul>
+      ${
+        portal
+          ? `<p><strong>予約者専用ページ:</strong> <a href="${manageUrl}">${manageUrl}</a></p>
+             <p><strong>初期パスワード:</strong> ${portal.initialPassword}</p>`
+          : "<p>予約者専用ページは現在利用できません。</p>"
+      }
+      <p>カレンダー招待メールも送信されています。</p>
+      `
+    )
+
     return NextResponse.json({
       ok: true,
       mode,
@@ -388,7 +396,8 @@ export async function POST(request: Request) {
         ? {
             id: portal.id,
             expiresAt: portal.expiresAt,
-            url: buildManageUrl(portal.id, portal.token),
+            url: manageUrl,
+            initialPassword: portal.initialPassword,
           }
         : null,
     })

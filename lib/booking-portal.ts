@@ -85,6 +85,7 @@ async function supabaseFetch(path: string, init?: RequestInit) {
 
 export async function createBookingPortal(input: CreatePortalInput) {
   const token = randomBytes(24).toString("hex")
+  const initialPassword = randomBytes(6).toString("base64url")
   const id = randomUUID()
   const expiresAt = `${input.date}T23:59:59+09:00`
   const payload = {
@@ -103,7 +104,7 @@ export async function createBookingPortal(input: CreatePortalInput) {
     calendar_event_url: input.calendarEventUrl || null,
     meet_url: input.meetUrl || null,
     manage_token_hash: hashToken(token),
-    manage_password_hash: null,
+    manage_password_hash: hashPassword(initialPassword),
     expires_at: expiresAt,
   }
 
@@ -113,7 +114,7 @@ export async function createBookingPortal(input: CreatePortalInput) {
   })
   if (!response.ok) throw new Error(`Failed to create booking portal: ${await response.text()}`)
 
-  return { id, token, expiresAt }
+  return { id, token, expiresAt, initialPassword }
 }
 
 async function getPortalRecord(id: string): Promise<BookingPortalRecord | null> {
