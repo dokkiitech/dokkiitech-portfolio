@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { format } from "date-fns"
+import { eachDayOfInterval, endOfMonth, format, startOfMonth } from "date-fns"
 import { ja } from "date-fns/locale"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -16,8 +16,10 @@ export default function AppointPage() {
   const [serverMessage, setServerMessage] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date())
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
+  const [disabledDateKeys, setDisabledDateKeys] = useState<Set<string>>(new Set())
 
   const {
     register,
@@ -36,6 +38,37 @@ export default function AppointPage() {
 
   const bookingType = watch("bookingType")
   const showLocation = useMemo(() => bookingType === "対面", [bookingType])
+
+  useEffect(() => {
+    const todayStart = new Date(new Date().setHours(0, 0, 0, 0))
+    const monthStart = startOfMonth(calendarMonth)
+    const monthEnd = endOfMonth(calendarMonth)
+    const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd }).filter(
+      (date) => date >= todayStart
+    )
+
+    const fetchMonthlyAvailability = async () => {
+      try {
+        const checks = await Promise.all(
+          monthDays.map(async (date) => {
+            const dateStr = format(date, "yyyy-MM-dd")
+            const response = await fetch(`/api/bookings?date=${dateStr}&bookingType=${encodeURIComponent(bookingType)}`)
+            const json = await response.json().catch(() => ({ ok: false, slots: [] }))
+            const isAvailable = json.ok && Array.isArray(json.slots) && json.slots.length > 0
+            return { dateStr, isAvailable }
+          })
+        )
+
+        setDisabledDateKeys(
+          new Set(checks.filter((item) => !item.isAvailable).map((item) => item.dateStr))
+        )
+      } catch {
+        setDisabledDateKeys(new Set())
+      }
+    }
+
+    fetchMonthlyAvailability()
+  }, [calendarMonth, bookingType])
 
   useEffect(() => {
     if (!selectedDate) {
@@ -134,13 +167,20 @@ export default function AppointPage() {
               <Calendar
                 mode="single"
                 selected={selectedDate}
+                month={calendarMonth}
+                onMonthChange={setCalendarMonth}
                 onSelect={(date) => {
                   setSelectedDate(date)
                   setValue("timeSlot", "")
                   setValue("date", date ? format(date, "yyyy-MM-dd") : "")
                 }}
                 locale={ja}
-                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                disabled={(date) => {
+                  const today = new Date(new Date().setHours(0, 0, 0, 0))
+                  if (date < today) return true
+                  const key = format(date, "yyyy-MM-dd")
+                  return disabledDateKeys.has(key)
+                }}
                 className="mt-2"
               />
               <input type="hidden" {...register("date")} />
