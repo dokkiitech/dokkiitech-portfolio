@@ -149,15 +149,15 @@ export default function ManageBookingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
+    <main className="min-h-screen bg-background text-foreground">
       <section className="mx-auto max-w-3xl px-4 py-24">
         <h1 className="text-3xl font-bold">予約者専用ページ</h1>
-        <p className="mt-2 text-slate-300">このページは予約日 23:59 まで有効です。</p>
+        <p className="mt-2 text-muted-foreground">このページは予約日 23:59 まで有効です。</p>
 
         {step === "loading" && <p className="mt-8">読み込み中...</p>}
 
         {step === "set-password" && (
-          <div className="mt-8 space-y-4 rounded-xl border border-slate-700 bg-slate-900/60 p-6">
+          <div className="mt-8 space-y-4 rounded-xl border border-border bg-card p-6">
             <Label htmlFor="newPassword">専用ページ用パスワードを設定（4文字以上）</Label>
             <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
             <Button onClick={onSetPassword}>パスワードを設定してログイン</Button>
@@ -165,7 +165,7 @@ export default function ManageBookingPage() {
         )}
 
         {step === "login" && (
-          <div className="mt-8 space-y-4 rounded-xl border border-slate-700 bg-slate-900/60 p-6">
+          <div className="mt-8 space-y-4 rounded-xl border border-border bg-card p-6">
             <Label htmlFor="password">パスワード</Label>
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
             <Button onClick={onLogin}>ログイン</Button>
@@ -173,8 +173,8 @@ export default function ManageBookingPage() {
         )}
 
         {step === "manage" && record && (
-          <div className="mt-8 space-y-4 rounded-xl border border-slate-700 bg-slate-900/60 p-6">
-            <p className="text-sm text-slate-300">対象: {record.name} / {record.email}</p>
+          <div className="mt-8 space-y-4 rounded-xl border border-border bg-card p-6">
+            <p className="text-sm text-muted-foreground">対象: {record.name} / {record.email}</p>
             <div>
               <Label>日付</Label>
               <Input value={form.date} onChange={(e) => setForm((prev) => ({ ...prev, date: e.target.value }))} />
@@ -207,7 +207,7 @@ export default function ManageBookingPage() {
         )}
 
         {step === "error" && <p className="mt-8 text-red-300">{message}</p>}
-        {message && step !== "error" && <p className="mt-4 whitespace-pre-wrap rounded-lg bg-slate-800 p-3 text-sm">{message}</p>}
+        {message && step !== "error" && <p className="mt-4 whitespace-pre-wrap rounded-lg bg-muted p-3 text-sm">{message}</p>}
       </section>
     </main>
   )

@@ -153,7 +153,13 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-slate-100">
+    <main
+      className={
+        mode === "terminal"
+          ? "min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-slate-100"
+          : "min-h-screen bg-background text-foreground"
+      }
+    >
       <section
         className={
           mode === "terminal"
@@ -161,21 +167,21 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
             : "mx-auto max-w-6xl px-4 pb-20 pt-24"
         }
       >
-        <header className={`${mode === "terminal" ? "mx-4" : ""} mb-6 rounded-2xl border border-slate-700 bg-slate-900/70 p-4 backdrop-blur`}>
+        <header className={`${mode === "terminal" ? "mx-4 border-slate-700 bg-slate-900/70" : "border-border bg-background/80"} mb-6 rounded-2xl border p-4 backdrop-blur`}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h1 className="text-xl font-semibold">DOKKIITECH Portfolio</h1>
-            <div className="inline-flex rounded-lg border border-slate-600 p-1 text-sm">
+            <div className={`inline-flex rounded-lg p-1 text-sm ${mode === "terminal" ? "border border-slate-600" : "border border-border"}`}>
               <button
                 type="button"
                 onClick={() => setMode("terminal")}
-                className={`rounded-md px-3 py-1 ${mode === "terminal" ? "bg-emerald-500/20 text-emerald-300" : "text-slate-300"}`}
+                className={`rounded-md px-3 py-1 ${mode === "terminal" ? "bg-emerald-500/20 text-emerald-300" : "text-muted-foreground"} ${mode === "ui" ? "bg-primary/15 text-primary" : ""}`}
               >
                 Terminal Mode
               </button>
               <button
                 type="button"
                 onClick={() => setMode("ui")}
-                className={`rounded-md px-3 py-1 ${mode === "ui" ? "bg-sky-500/20 text-sky-300" : "text-slate-300"}`}
+                className={`rounded-md px-3 py-1 ${mode === "ui" ? "bg-primary/15 text-primary" : "text-muted-foreground"}`}
               >
                 UI Mode
               </button>
@@ -218,10 +224,10 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
           </section>
         ) : (
           <section className="space-y-8">
-            <article id="profile" className="rounded-3xl border border-cyan-400/30 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-cyan-950/40 p-7 shadow-[0_0_80px_rgba(34,211,238,0.15)]">
+            <article id="profile" className="rounded-3xl border border-border bg-card p-7 shadow-sm">
               <p className="text-xs tracking-[0.25em] text-cyan-300">PROFILE</p>
               <h2 className="mt-2 text-3xl font-bold">木戸亮輔 / DOKKIITECH</h2>
-              <p className="mt-4 max-w-3xl text-slate-300">
+              <p className="mt-4 max-w-3xl text-muted-foreground">
                 セキュリティ学習を土台に、Next.js / TypeScript / Go を中心としたプロダクト開発を実践。技術検証や開発知見を Zenn（@dokkiitech）で発信しています。
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
@@ -234,7 +240,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
             </article>
 
             <div className="grid gap-6 lg:grid-cols-2">
-              <article id="blog" className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
+              <article id="blog" className="rounded-2xl border border-border bg-card p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-2xl font-semibold">ブログ</h2>
                   <a href="https://zenn.dev/dokkiitech" target="_blank" rel="noreferrer" className="text-sm text-sky-300 underline">
@@ -243,15 +249,15 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
                 </div>
                 <div className="space-y-3">
                   {blogArticles.slice(0, 4).map((item) => (
-                    <a key={item.link} href={item.link} target="_blank" rel="noreferrer" className="block rounded-xl border border-slate-700 p-3 transition hover:-translate-y-0.5 hover:bg-slate-800">
+                    <a key={item.link} href={item.link} target="_blank" rel="noreferrer" className="block rounded-xl border border-border p-3 transition hover:-translate-y-0.5 hover:bg-muted">
                       <p className="font-medium">{item.title}</p>
-                      <p className="mt-1 text-xs text-slate-400">{new Date(item.pubDate).toLocaleDateString("ja-JP")}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{new Date(item.pubDate).toLocaleDateString("ja-JP")}</p>
                     </a>
                   ))}
                 </div>
               </article>
 
-              <article id="product" className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
+              <article id="product" className="rounded-2xl border border-border bg-card p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-2xl font-semibold">Product</h2>
                   <a href="https://zenn.dev/dokkiitech" target="_blank" rel="noreferrer" className="text-sm text-sky-300 underline">
@@ -260,16 +266,16 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
                 </div>
                 <div className="space-y-3">
                   {productArticles.slice(0, 4).map((item) => (
-                    <a key={item.link} href={item.link} target="_blank" rel="noreferrer" className="block rounded-xl border border-slate-700 p-3 transition hover:-translate-y-0.5 hover:bg-slate-800">
+                    <a key={item.link} href={item.link} target="_blank" rel="noreferrer" className="block rounded-xl border border-border p-3 transition hover:-translate-y-0.5 hover:bg-muted">
                       <p className="font-medium">{item.title}</p>
-                      <p className="mt-1 text-xs text-slate-400">{new Date(item.pubDate).toLocaleDateString("ja-JP")}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{new Date(item.pubDate).toLocaleDateString("ja-JP")}</p>
                     </a>
                   ))}
                 </div>
               </article>
             </div>
 
-            <article id="sns" className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
+            <article id="sns" className="rounded-2xl border border-border bg-card p-6">
               <h2 className="mb-4 text-2xl font-semibold">各種SNSリンク</h2>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {snsLinks.map((item) => (
@@ -278,10 +284,10 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
                     href={item.href}
                     target={item.href.startsWith("mailto:") ? undefined : "_blank"}
                     rel={item.href.startsWith("mailto:") ? undefined : "noreferrer"}
-                    className="rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-3 transition hover:border-cyan-400/50 hover:bg-slate-800"
+                    className="rounded-xl border border-border bg-card px-4 py-3 transition hover:border-cyan-400/50 hover:bg-muted"
                   >
                     <p className="font-medium">{item.label}</p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-muted-foreground">
                       {item.label === "Email" ? "info@dokkiitech.com" : "@dokkiitech"}
                     </p>
                   </a>
@@ -289,9 +295,9 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
               </div>
             </article>
 
-            <article id="booking" className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
+            <article id="booking" className="rounded-2xl border border-border bg-card p-6">
               <h2 className="mb-3 text-2xl font-semibold">予約</h2>
-              <p className="text-slate-300">
+              <p className="text-muted-foreground">
                 打ち合わせ予約は `meet / 対面` に対応しています。対面の場合は場所指定ありで調整します。
                 連絡は `info@dokkiitech.com` でも可能です。
               </p>
