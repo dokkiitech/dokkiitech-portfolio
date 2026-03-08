@@ -41,6 +41,8 @@ const pageMap: Record<string, string> = {
   sns: "/contact",
   contact: "/contact",
 }
+const rootCommands = ["help", "ls", "profile", "blog", "product", "sns", "appointment", "clear", "cd"] as const
+const cdTargets = ["home", "profile", "blog", "products", "contact", "appointment"] as const
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -56,7 +58,7 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
 
   const commandMap = useMemo(
     () => ({
-      help: ["利用可能: help, ls, profile, blog, product, sns, booking, cd <page>, clear"],
+      help: ["利用可能: help, ls, profile, blog, product, sns, appointment, cd <page>, clear"],
       ls: [
         "/home /profile /blog /products /contact /appointment",
       ],
@@ -98,6 +100,7 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
       product: productArticles.slice(0, 3).map((item) => `- ${item.title}`),
       sns: snsLinks.map((item) => `- ${item.label}: ${item.href}`),
       booking: ["予約ページ: /appointment", "cd booking で移動できます。"],
+      appointment: ["予約ページ: /appointment", "cd appointment で移動できます。"],
     }),
     [blogArticles, productArticles, focusStack]
   )
@@ -201,6 +204,12 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
       return
     }
 
+    if (lower === "cd") {
+      await typeLines(["usage: cd <page>", "例: cd /blog  または cd appointment"], sessionId)
+      setCommand("")
+      return
+    }
+
     if (lower.startsWith("cd ")) {
       await handleCd(raw.slice(3), sessionId)
       setCommand("")
@@ -214,6 +223,43 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
 
     await typeLines(outputs, sessionId)
     setCommand("")
+  }
+
+  const handleTabCompletion = () => {
+    if (!command.trim()) return
+
+    const raw = command
+    const lower = raw.toLowerCase()
+
+    if (!lower.startsWith("cd ")) {
+      const candidates = rootCommands.filter((item) => item.startsWith(lower))
+      if (candidates.length === 1) {
+        const completed = candidates[0]
+        setCommand(completed === "cd" ? "cd " : completed)
+      } else if (candidates.length > 1) {
+        pushLine("output", candidates.join("  "))
+      }
+      return
+    }
+
+    const rawTarget = raw.slice(3)
+    const hasSlash = rawTarget.startsWith("/")
+    const hasTilde = rawTarget.startsWith("~/")
+    const normalizedPrefix = rawTarget.trim().toLowerCase().replace(/^~\//, "").replace(/^\/+/, "")
+    const candidates = cdTargets.filter((item) => item.startsWith(normalizedPrefix))
+
+    if (candidates.length === 1) {
+      const target = candidates[0]
+      if (hasTilde) {
+        setCommand(`cd ~/${target}`)
+      } else if (hasSlash) {
+        setCommand(`cd /${target}`)
+      } else {
+        setCommand(`cd ${target}`)
+      }
+    } else if (candidates.length > 1) {
+      pushLine("output", candidates.map((item) => `/${item}`).join("  "))
+    }
   }
 
   return (
@@ -282,6 +328,11 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       void execute()
+                      return
+                    }
+                    if (e.key === "Tab") {
+                      e.preventDefault()
+                      handleTabCompletion()
                     }
                   }}
                   className="w-full bg-transparent text-base text-foreground outline-none md:text-sm"
