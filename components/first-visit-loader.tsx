@@ -51,7 +51,7 @@ export function FirstVisitLoader() {
         setShow(false)
         setClosing(false)
       }, 360)
-    }, intervalMs * logs.length + 2000)
+    }, intervalMs * logs.length + 1000)
 
     return () => {
       clearInterval(lineTimer)
