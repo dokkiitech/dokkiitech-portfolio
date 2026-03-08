@@ -18,22 +18,64 @@ export async function POST(request: Request) {
     }
 
     const payload = parsed.data
+    const mode = (process.env.BOOKING_BACKEND_MODE || "mock").toLowerCase()
 
-    // Google Calendar 連携用プレースホルダ
-    const integrationEnabled = Boolean(process.env.GOOGLE_CALENDAR_CALENDAR_ID && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL)
+    if (mode === "api") {
+      const upstreamUrl = process.env.BOOKING_API_URL
+      if (!upstreamUrl) {
+        return NextResponse.json(
+          {
+            ok: false,
+            message: "BOOKING_API_URL が未設定です。`BOOKING_BACKEND_MODE=mock` で運用してください。",
+          },
+          { status: 500 }
+        )
+      }
+
+      const upstreamResponse = await fetch(upstreamUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(process.env.BOOKING_API_KEY ? { Authorization: `Bearer ${process.env.BOOKING_API_KEY}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      })
+
+      const upstreamJson = await upstreamResponse.json().catch(() => ({}))
+
+      if (!upstreamResponse.ok) {
+        return NextResponse.json(
+          {
+            ok: false,
+            mode,
+            message: "外部予約API連携に失敗しました。",
+            upstreamStatus: upstreamResponse.status,
+            upstream: upstreamJson,
+          },
+          { status: 502 }
+        )
+      }
+
+      return NextResponse.json({
+        ok: true,
+        mode,
+        message: "外部予約APIへ送信しました。",
+        upstream: upstreamJson,
+      })
+    }
 
     return NextResponse.json({
       ok: true,
+      mode: "mock",
       bookingId: `mock_${Date.now()}`,
-      integrationEnabled,
-      message: integrationEnabled
-        ? "予約リクエストを受け付けました。Google Calendar 連携を実行します。"
-        : "予約リクエストを受け付けました（モック処理）。Google Calendar の環境変数設定後に実連携へ切替できます。",
+      message: "予約リクエストを受け付けました（モック処理）。",
       request: payload,
       contract: {
         endpoint: "/api/bookings",
         method: "POST",
-        requiredEnv: ["GOOGLE_CALENDAR_CALENDAR_ID", "GOOGLE_SERVICE_ACCOUNT_EMAIL", "GOOGLE_PRIVATE_KEY"],
+        modeEnv: "BOOKING_BACKEND_MODE=mock|api",
+        requiredEnvForApiMode: ["BOOKING_API_URL"],
+        optionalEnvForApiMode: ["BOOKING_API_KEY"],
       },
     })
   } catch {

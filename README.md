@@ -31,10 +31,12 @@ NEXT_PUBLIC_ZENN_USERNAME=dokkiitech
 # ZENN_FALLBACK_ARTICLES_JSON=[{"title":"...","link":"...","pubDate":"...","description":"...","tags":["product"]}]
 ZENN_FALLBACK_ARTICLES_JSON=
 
-# Google Calendar 連携用（現状はモックAPIでプレースホルダ）
-GOOGLE_CALENDAR_CALENDAR_ID=
-GOOGLE_SERVICE_ACCOUNT_EMAIL=
-GOOGLE_PRIVATE_KEY=
+# 予約バックエンド切替
+# mock: 常にモック応答
+# api: BOOKING_API_URL に転送
+BOOKING_BACKEND_MODE=mock
+BOOKING_API_URL=
+BOOKING_API_KEY=
 ```
 
 ## Zenn 連携仕様
@@ -45,7 +47,7 @@ GOOGLE_PRIVATE_KEY=
 
 `/blog` は全記事、`/products` は `product` タグのみ表示します。
 
-## 予約API契約（モック）
+## 予約API契約（モード切替）
 
 - Endpoint: `POST /api/bookings`
 - Request:
@@ -64,7 +66,8 @@ GOOGLE_PRIVATE_KEY=
 - 仕様:
   - `bookingType` は `meet` または `対面`
   - `bookingType=対面` の場合は `location` 必須
-  - 現在はモック応答。将来 Google Calendar 登録処理に差し替え可能
+  - `BOOKING_BACKEND_MODE=mock` の場合はモック応答
+  - `BOOKING_BACKEND_MODE=api` の場合は `BOOKING_API_URL` に POST 転送
 
 ## Vercel デプロイ手順
 
