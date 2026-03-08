@@ -1,9 +1,11 @@
+import { getFocusStackFromGitHub } from "@/lib/github"
+
 export const metadata = {
   title: "プロフィール | DOKKIITECH",
   description: "木戸亮輔（DOKKIITECH）のプロフィールページです。",
 }
 
-const skills = ["Next.js", "TypeScript", "Go", "Docker", "AWS", "Tailwind CSS", "Security"]
+const fallbackSkills = ["Next.js", "TypeScript", "Go", "Docker", "AWS", "Tailwind CSS", "Security"]
 
 const socials = [
   { name: "GitHub", href: "https://github.com/dokkiitech", id: "@dokkiitech" },
@@ -13,7 +15,16 @@ const socials = [
   { name: "Email", href: "mailto:info@dokkiitech.com", id: "info@dokkiitech.com" },
 ]
 
-export default function ProfilePage() {
+export default async function ProfilePage() {
+  const username = process.env.NEXT_PUBLIC_GITHUB_USERNAME || "dokkiitech"
+  let skills = fallbackSkills
+  try {
+    const fromGitHub = await getFocusStackFromGitHub(username)
+    if (fromGitHub.length > 0) skills = fromGitHub
+  } catch {
+    skills = fallbackSkills
+  }
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <section className="mx-auto max-w-5xl px-4 py-24">
