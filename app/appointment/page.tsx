@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { format } from "date-fns"
 import { ja } from "date-fns/locale"
 import { useForm } from "react-hook-form"
@@ -12,20 +12,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 
-const WEEKLY_SLOTS: Record<number, string[]> = {
-  0: [],
-  1: ["11:00", "13:00", "15:00", "20:00"],
-  2: ["11:00", "14:00", "16:00", "21:00"],
-  3: ["11:00", "13:00", "17:00", "22:00"],
-  4: ["12:00", "14:00", "18:00", "21:00"],
-  5: ["11:00", "13:00", "15:00", "19:00"],
-  6: ["12:00", "16:00", "20:00"],
-}
-
 export default function AppointPage() {
   const [serverMessage, setServerMessage] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
+  const [availableSlots, setAvailableSlots] = useState<string[]>([])
+  const [loadingSlots, setLoadingSlots] = useState(false)
 
   const {
     register,
@@ -44,10 +36,29 @@ export default function AppointPage() {
 
   const bookingType = watch("bookingType")
   const showLocation = useMemo(() => bookingType === "対面", [bookingType])
-  const availableSlots = useMemo(
-    () => (selectedDate ? WEEKLY_SLOTS[selectedDate.getDay()] || [] : []),
-    [selectedDate]
-  )
+
+  useEffect(() => {
+    if (!selectedDate) {
+      setAvailableSlots([])
+      return
+    }
+
+    const fetchAvailability = async () => {
+      const dateStr = format(selectedDate, "yyyy-MM-dd")
+      setLoadingSlots(true)
+      try {
+        const response = await fetch(`/api/bookings?date=${dateStr}&bookingType=${encodeURIComponent(bookingType)}`)
+        const json = await response.json()
+        setAvailableSlots(json.ok && Array.isArray(json.slots) ? json.slots : [])
+      } catch {
+        setAvailableSlots([])
+      } finally {
+        setLoadingSlots(false)
+      }
+    }
+
+    fetchAvailability()
+  }, [selectedDate, bookingType])
 
   const onSubmit = async (values: BookingInput) => {
     setSubmitting(true)
@@ -143,7 +154,9 @@ export default function AppointPage() {
                   <p className="mt-2 text-sm text-slate-400">
                     {format(selectedDate, "yyyy年MM月dd日(E)", { locale: ja })} の空き枠
                   </p>
-                  {availableSlots.length > 0 ? (
+                  {loadingSlots ? (
+                    <p className="mt-3 text-sm text-slate-400">空き時間を照会中...</p>
+                  ) : availableSlots.length > 0 ? (
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       {availableSlots.map((slot) => (
                         <label key={slot} className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-700 p-2">

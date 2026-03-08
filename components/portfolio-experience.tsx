@@ -54,7 +54,8 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
 
   const commandMap = useMemo(
     () => ({
-      help: ["利用可能: help, profile, blog, product, sns, booking, cd <page>, clear"],
+      help: ["利用可能: help, ls, profile, blog, product, sns, booking, cd <page>, clear"],
+      ls: ["blog  products  profile  contact  appointment  home"],
       profile: ["木戸亮輔 / DOKKIITECH", "Webアプリ開発・プロダクト設計・技術発信を中心に活動中。"],
       blog: blogArticles.slice(0, 3).map((item) => `- ${item.title}`),
       product: productArticles.slice(0, 3).map((item) => `- ${item.title}`),
