@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "DOKKIITECH",
-  description: "木戸亮輔のポートフォリオサイトです。私のプロダクト情報やSNSアカウントの紹介など木戸亮輔についての全ての情報が手に入ります。",
+  description: "木戸亮輔(dokkiitech)のポートフォリオサイトです。ターミナルUIを採用した楽しいポートフォリオを皆様に提供しています。木戸亮輔について知れることはもちろん、お打ち合わせのご予約もこちらから行なっていただけます。",
   manifest: '/site.webmanifest',
   icons: {
     icon: [
