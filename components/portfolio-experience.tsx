@@ -48,6 +48,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
   const [isTyping, setIsTyping] = useState(false)
   const lineIdRef = useRef(0)
   const typingSessionRef = useRef(0)
+  const terminalInputRef = useRef<HTMLInputElement | null>(null)
 
   const commandMap = useMemo(
     () => ({
@@ -97,6 +98,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
     const sessionId = Date.now()
     typingSessionRef.current = sessionId
     setHistory([])
+    setTimeout(() => terminalInputRef.current?.focus(), 60)
     typeLines(
       [
         "Portfolio terminalへようこそ。",
@@ -179,7 +181,10 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
         </header>
 
         {mode === "terminal" ? (
-          <section className="h-[calc(100vh-11rem)] w-full rounded-none border-y border-slate-700 bg-black/80 p-4 shadow-2xl shadow-black/30">
+          <section
+            className="h-[calc(100vh-11rem)] w-full rounded-none border-y border-slate-700 bg-black/80 p-4 shadow-2xl shadow-black/30"
+            onClick={() => terminalInputRef.current?.focus()}
+          >
             <div className="mb-4 flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-red-400" />
               <span className="h-3 w-3 rounded-full bg-yellow-400" />
@@ -194,6 +199,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
               <label className="flex items-center gap-2 text-emerald-300">
                 <span>{prompt}</span>
                 <input
+                  ref={terminalInputRef}
                   value={command}
                   onChange={(e) => setCommand(e.target.value)}
                   onKeyDown={(e) => {
