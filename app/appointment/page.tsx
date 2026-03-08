@@ -118,7 +118,12 @@ export default function AppointPage() {
       })
       const result = await response.json()
       const manageUrl = result.managePortal?.url ? `予約管理URL: ${result.managePortal.url}` : ""
-      const detail = [result.message, result.hint, manageUrl, result.managePortalError, result.error].filter(Boolean).join("\n")
+      const resendState = result.resend
+        ? result.resend.sent
+          ? "Resend: 送信成功"
+          : `Resend: 送信失敗 (${result.resend.reason || "unknown"})`
+        : ""
+      const detail = [result.message, result.hint, manageUrl, resendState, result.managePortalError, result.error].filter(Boolean).join("\n")
       setServerMessage(detail || "送信が完了しました。")
       if (result.ok) {
         reset({ bookingType: values.bookingType, timeSlot: "" })
