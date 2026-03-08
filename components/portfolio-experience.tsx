@@ -118,8 +118,6 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
       ].join("\n"),
     []
   )
-  const terminalLabelDesktop = "▓▓▓▓▓  PORTFOLIO TERMINAL  ▓▓▓▓▓"
-  const terminalLabelMobile = "▓▓▓▓▓  PORTFOLIO\n▓▓▓▓▓  TERMINAL"
 
   const pushLine = (kind: TerminalLine["kind"], text: string): number => {
     const id = ++lineIdRef.current
@@ -273,8 +271,14 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
               <pre className="mb-3 overflow-x-auto border border-emerald-600/40 bg-emerald-500/10 p-3 text-[5px] leading-tight text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/5 dark:text-emerald-300 sm:text-[7px] md:text-[10px]">
                 {terminalTitleArt}
               </pre>
-              <pre className="mb-4 hidden text-center font-mono text-sm leading-tight tracking-[0.24em] text-emerald-700 dark:text-emerald-300 md:block">{terminalLabelDesktop}</pre>
-              <pre className="mb-4 text-center font-mono text-xs leading-tight tracking-[0.2em] text-emerald-700 dark:text-emerald-300 md:hidden">{terminalLabelMobile}</pre>
+              <div className="mb-4 text-center font-mono leading-tight text-emerald-700 dark:text-emerald-300">
+                <p className="hidden text-sm tracking-[0.28em] md:block">PORTFOLIO TERMINAL</p>
+                <p className="text-xs tracking-[0.2em] md:hidden">
+                  PORTFOLIO
+                  <br />
+                  TERMINAL
+                </p>
+              </div>
               {history.map((line) => (
                 <p key={line.id} className={line.kind === "command" ? "text-emerald-600 dark:text-emerald-300" : "text-slate-700 dark:text-slate-200"}>
                   {line.text}
