@@ -1,11 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { format } from "date-fns"
+import { ja } from "date-fns/locale"
 import { useParams, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Calendar } from "@/components/ui/calendar"
 
 interface ManageRecord {
   id: string
@@ -20,10 +23,16 @@ interface ManageRecord {
   status: string
   expiresAt: string
   passwordSet: boolean
-  meetUrl?: string | null
 }
 
 type Step = "loading" | "set-password" | "login" | "manage" | "error"
+
+function buildFallbackSlots(date: string): string[] {
+  return Array.from({ length: 14 }, (_, idx) => `${String(10 + idx).padStart(2, "0")}:00`).filter((slot) => {
+    const slotStart = new Date(`${date}T${slot}:00+09:00`)
+    return slotStart.getTime() > Date.now()
+  })
+}
 
 export default function ManageBookingPage() {
   const params = useParams<{ id: string }>()
@@ -35,14 +44,18 @@ export default function ManageBookingPage() {
   const [password, setPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [record, setRecord] = useState<ManageRecord | null>(null)
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>()
+  const [availableSlots, setAvailableSlots] = useState<string[]>([])
+  const [loadingSlots, setLoadingSlots] = useState(false)
   const [form, setForm] = useState({
     date: "",
     timeSlot: "",
-    bookingType: "meet",
     location: "",
     company: "",
     agenda: "",
   })
+
+  const showLocation = useMemo(() => record?.bookingType === "対面", [record?.bookingType])
 
   const verify = async (inputPassword?: string) => {
     const response = await fetch(`/api/bookings/manage/${params.id}/verify`, {
@@ -65,15 +78,9 @@ export default function ManageBookingPage() {
     const bootstrap = async () => {
       const checked = await verify()
       if (checked.ok && checked.record) {
-        if (!checked.record.passwordSet) {
-          setRecord(checked.record)
-          setStep("set-password")
-          return
-        }
-        setStep("login")
+        setStep(checked.record.passwordSet ? "login" : "set-password")
         return
       }
-
       if (checked.message?.includes("パスワードを入力")) {
         setStep("login")
       } else {
@@ -85,21 +92,47 @@ export default function ManageBookingPage() {
     bootstrap()
   }, [token, params.id])
 
+  const loadAvailability = async (dateStr: string, currentTimeSlot?: string) => {
+    setLoadingSlots(true)
+    try {
+      const response = await fetch(`/api/bookings?date=${dateStr}&bookingType=${encodeURIComponent(record?.bookingType || "meet")}`)
+      const json = await response.json()
+      const fromApi = response.ok && json.ok && Array.isArray(json.slots) ? (json.slots as string[]) : buildFallbackSlots(dateStr)
+      const merged = currentTimeSlot && !fromApi.includes(currentTimeSlot) ? [currentTimeSlot, ...fromApi] : fromApi
+      setAvailableSlots(Array.from(new Set(merged)))
+    } catch {
+      const fallback = buildFallbackSlots(dateStr)
+      const merged = currentTimeSlot && !fallback.includes(currentTimeSlot) ? [currentTimeSlot, ...fallback] : fallback
+      setAvailableSlots(Array.from(new Set(merged)))
+    } finally {
+      setLoadingSlots(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!selectedDate || step !== "manage") return
+    const dateStr = format(selectedDate, "yyyy-MM-dd")
+    setForm((prev) => ({ ...prev, date: dateStr, timeSlot: "" }))
+    void loadAvailability(dateStr, record?.timeSlot)
+  }, [selectedDate, step, record?.timeSlot])
+
   const onLogin = async () => {
     const checked = await verify(password)
     if (!checked.ok || !checked.record) {
       setMessage(checked.message || "認証に失敗しました。")
       return
     }
+
     setRecord(checked.record)
+    setSelectedDate(new Date(`${checked.record.date}T00:00:00+09:00`))
     setForm({
       date: checked.record.date,
       timeSlot: checked.record.timeSlot,
-      bookingType: checked.record.bookingType,
       location: checked.record.location || "",
       company: checked.record.company || "",
       agenda: checked.record.agenda,
     })
+    await loadAvailability(checked.record.date, checked.record.timeSlot)
     setStep("manage")
     setMessage("")
   }
@@ -128,14 +161,15 @@ export default function ManageBookingPage() {
         password,
         date: form.date,
         timeSlot: form.timeSlot,
-        bookingType: form.bookingType,
+        bookingType: record?.bookingType,
         location: form.location,
         company: form.company,
         agenda: form.agenda,
       }),
     })
     const json = await response.json()
-    setMessage(json.message || "更新結果を確認してください。")
+    const resendState = json.resend ? (json.resend.sent ? "Resend: 送信成功" : `Resend: 送信失敗 (${json.resend.reason || "unknown"})`) : ""
+    setMessage([json.message, resendState, json.error].filter(Boolean).join("\n"))
   }
 
   const onCancel = async () => {
@@ -145,7 +179,8 @@ export default function ManageBookingPage() {
       body: JSON.stringify({ token, password }),
     })
     const json = await response.json()
-    setMessage(json.message || "キャンセル結果を確認してください。")
+    const resendState = json.resend ? (json.resend.sent ? "Resend: 送信成功" : `Resend: 送信失敗 (${json.resend.reason || "unknown"})`) : ""
+    setMessage([json.message, resendState, json.error].filter(Boolean).join("\n"))
   }
 
   return (
@@ -175,22 +210,54 @@ export default function ManageBookingPage() {
         {step === "manage" && record && (
           <div className="mt-8 space-y-4 rounded-xl border border-border bg-card p-6">
             <p className="text-sm text-muted-foreground">対象: {record.name} / {record.email}</p>
+
             <div>
-              <Label>日付</Label>
-              <Input value={form.date} onChange={(e) => setForm((prev) => ({ ...prev, date: e.target.value }))} />
+              <Label>予約タイプ（変更不可）</Label>
+              <Input value={record.bookingType} readOnly />
             </div>
-            <div>
-              <Label>時間</Label>
-              <Input value={form.timeSlot} onChange={(e) => setForm((prev) => ({ ...prev, timeSlot: e.target.value }))} />
+
+            <div className="rounded-lg border border-border p-3">
+              <Label>日付選択</Label>
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                locale={ja}
+                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                className="mt-2"
+              />
             </div>
-            <div>
-              <Label>形式</Label>
-              <Input value={form.bookingType} onChange={(e) => setForm((prev) => ({ ...prev, bookingType: e.target.value }))} />
+
+            <div className="rounded-lg border border-border p-3">
+              <Label>時間帯選択</Label>
+              {loadingSlots ? (
+                <p className="mt-2 text-sm text-muted-foreground">空き時間を照会中...</p>
+              ) : availableSlots.length > 0 ? (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {availableSlots.map((slot) => (
+                    <label key={slot} className="flex cursor-pointer items-center gap-2 rounded-md border border-border p-2">
+                      <input
+                        type="radio"
+                        name="manage-time-slot"
+                        checked={form.timeSlot === slot}
+                        onChange={() => setForm((prev) => ({ ...prev, timeSlot: slot }))}
+                      />
+                      <span>{slot}</span>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-muted-foreground">選択日の空き時間がありません。</p>
+              )}
             </div>
-            <div>
-              <Label>場所（対面時）</Label>
-              <Input value={form.location} onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))} />
-            </div>
+
+            {showLocation && (
+              <div>
+                <Label>場所（対面時）</Label>
+                <Input value={form.location} onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))} />
+              </div>
+            )}
+
             <div>
               <Label>会社名（任意）</Label>
               <Input value={form.company} onChange={(e) => setForm((prev) => ({ ...prev, company: e.target.value }))} />
@@ -199,14 +266,19 @@ export default function ManageBookingPage() {
               <Label>相談内容</Label>
               <Textarea value={form.agenda} onChange={(e) => setForm((prev) => ({ ...prev, agenda: e.target.value }))} />
             </div>
+
             <div className="flex gap-3">
-              <Button onClick={onUpdate}>予約を変更</Button>
-              <Button variant="destructive" onClick={onCancel}>予約をキャンセル</Button>
+              <Button onClick={onUpdate} disabled={!form.date || !form.timeSlot}>
+                予約を変更
+              </Button>
+              <Button variant="destructive" onClick={onCancel}>
+                予約をキャンセル
+              </Button>
             </div>
           </div>
         )}
 
-        {step === "error" && <p className="mt-8 text-red-300">{message}</p>}
+        {step === "error" && <p className="mt-8 text-red-500">{message}</p>}
         {message && step !== "error" && <p className="mt-4 whitespace-pre-wrap rounded-lg bg-muted p-3 text-sm">{message}</p>}
       </section>
     </main>

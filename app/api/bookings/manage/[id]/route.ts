@@ -63,6 +63,48 @@ async function createGoogleAccessToken(): Promise<string> {
   return tokenJson.access_token
 }
 
+async function checkSlotBusy(accessToken: string, calendarId: string, date: string, timeSlot: string): Promise<boolean> {
+  const { startDateTime, endDateTime } = getStartEnd(date, timeSlot)
+  const response = await fetch("https://www.googleapis.com/calendar/v3/freeBusy", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      timeMin: startDateTime,
+      timeMax: endDateTime,
+      timeZone: DEFAULT_TIMEZONE,
+      items: [{ id: calendarId }],
+    }),
+  })
+  if (!response.ok) throw new Error(`FreeBusy request failed: ${await response.text()}`)
+  const json = (await response.json()) as { calendars?: Record<string, { busy?: Array<{ start: string; end: string }> }> }
+  return (json.calendars?.[calendarId]?.busy || []).length > 0
+}
+
+async function sendResendMail(to: string, subject: string, html: string) {
+  const apiKey = process.env.RESEND_API_KEY
+  const from = process.env.RESEND_FROM
+  if (!apiKey || !from) return { sent: false, reason: "RESEND_API_KEY or RESEND_FROM missing" }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: [to],
+      subject,
+      html,
+    }),
+  })
+  if (!response.ok) return { sent: false, reason: await response.text() }
+  return { sent: true }
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -80,7 +122,14 @@ export async function PATCH(
 
     const nextDate = body.date ? String(body.date) : checked.record.date
     const nextTimeSlot = body.timeSlot ? String(body.timeSlot) : checked.record.time_slot
-    const nextBookingType = body.bookingType ? (String(body.bookingType) as "meet" | "対面") : checked.record.booking_type
+    const requestedBookingType = body.bookingType ? (String(body.bookingType) as "meet" | "対面") : checked.record.booking_type
+    const nextBookingType = checked.record.booking_type
+    if (requestedBookingType !== checked.record.booking_type) {
+      return NextResponse.json(
+        { ok: false, message: "予約タイプ（Meet/対面）は変更できません。新規予約で切り替えてください。" },
+        { status: 400 }
+      )
+    }
     const nextLocation = body.location !== undefined ? String(body.location || "") : checked.record.location
     const nextAgenda = body.agenda ? String(body.agenda) : checked.record.agenda
     const nextCompany = body.company !== undefined ? String(body.company || "") : checked.record.company
@@ -91,6 +140,16 @@ export async function PATCH(
     if (getMode() === "gcp" && checked.record.calendar_event_id) {
       const calendarId = envOrThrow("GOOGLE_CALENDAR_CALENDAR_ID")
       const accessToken = await createGoogleAccessToken()
+      const changedSlot = nextDate !== checked.record.date || nextTimeSlot !== checked.record.time_slot
+      if (changedSlot) {
+        const busy = await checkSlotBusy(accessToken, calendarId, nextDate, nextTimeSlot)
+        if (busy) {
+          return NextResponse.json(
+            { ok: false, message: "選択した時間帯は空いていません。別の時間を選択してください。" },
+            { status: 409 }
+          )
+        }
+      }
       const { startDateTime, endDateTime } = getStartEnd(nextDate, nextTimeSlot)
 
       const patchResponse = await fetch(
@@ -141,10 +200,27 @@ export async function PATCH(
       meet_url: meetUrl || null,
     })
 
+    const resend = await sendResendMail(
+      checked.record.email,
+      "予約変更のお知らせ",
+      `
+      <p>${checked.record.name} 様</p>
+      <p>予約内容が変更されました。</p>
+      <ul>
+        <li>日付: ${nextDate}</li>
+        <li>時間: ${nextTimeSlot}</li>
+        <li>形式: ${nextBookingType}</li>
+        <li>Meet URL: ${meetUrl || "-"}</li>
+        <li>場所: ${nextBookingType === "対面" ? nextLocation || "-" : "-"}</li>
+      </ul>
+      `
+    )
+
     return NextResponse.json({
       ok: true,
       message: "予約情報を更新しました。",
       record: updated,
+      resend,
     })
   } catch (error) {
     return NextResponse.json({ ok: false, message: "予約変更に失敗しました。", error: String(error) }, { status: 500 })
@@ -190,10 +266,24 @@ export async function DELETE(
     }
 
     const canceled = await cancelPortalBooking(id)
+    const resend = await sendResendMail(
+      checked.record.email,
+      "予約キャンセルのお知らせ",
+      `
+      <p>${checked.record.name} 様</p>
+      <p>以下の予約はキャンセルされました。</p>
+      <ul>
+        <li>日付: ${checked.record.date}</li>
+        <li>時間: ${checked.record.time_slot}</li>
+        <li>形式: ${checked.record.booking_type}</li>
+      </ul>
+      `
+    )
     return NextResponse.json({
       ok: true,
       message: "予約をキャンセルしました。",
       record: canceled,
+      resend,
     })
   } catch (error) {
     return NextResponse.json({ ok: false, message: "予約キャンセルに失敗しました。", error: String(error) }, { status: 500 })
