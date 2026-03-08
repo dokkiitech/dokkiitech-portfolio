@@ -48,11 +48,20 @@ export default async function ProfilePage() {
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           <article className="rounded-2xl border border-border bg-card p-6">
             <h2 className="text-xl font-semibold">Focus Stack</h2>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 space-y-3">
               {skills.map((item) => (
-                <span key={item.language} className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
-                  {item.language}{item.percentage > 0 ? ` ${item.percentage}%` : ""}
-                </span>
+                <div key={item.language}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span>{item.language}</span>
+                    <span className="text-muted-foreground">{item.percentage > 0 ? `${item.percentage}%` : "-"}</span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-muted">
+                    <div
+                      className="h-2 rounded-full bg-emerald-500 transition-all"
+                      style={{ width: `${Math.max(item.percentage, item.percentage > 0 ? 6 : 0)}%` }}
+                    />
+                  </div>
+                </div>
               ))}
             </div>
           </article>
