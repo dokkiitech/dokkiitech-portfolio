@@ -46,7 +46,7 @@ export default function RootLayout({
   return (
     <html lang="ja" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange storageKey="dokkiitech-theme">
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange storageKey="dokkiitech-theme">
           <FirstVisitLoader />
           <CtrlCTerminalShortcut />
           <Navigation />
