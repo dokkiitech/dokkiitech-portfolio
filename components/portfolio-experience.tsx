@@ -286,7 +286,7 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
               ))}
               <label className="flex items-center gap-2 text-emerald-600 dark:text-emerald-300">
                 <span className="hidden sm:inline">{prompt}</span>
-                <span className="sm:hidden text-xs">dokkiitech$</span>
+                <span className="sm:hidden">$</span>
                 <input
                   ref={terminalInputRef}
                   value={command}
