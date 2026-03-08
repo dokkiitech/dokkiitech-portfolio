@@ -1,6 +1,7 @@
 import { createSign } from "crypto"
 import { NextResponse } from "next/server"
 import { bookingSchema } from "@/lib/booking"
+import { createBookingPortal } from "@/lib/booking-portal"
 
 export const runtime = "nodejs"
 
@@ -15,6 +16,12 @@ type BookingMode = "mock" | "gcp"
 function getMode(): BookingMode {
   const mode = (process.env.BOOKING_BACKEND_MODE || "mock").toLowerCase()
   return mode === "gcp" ? "gcp" : "mock"
+}
+
+function buildManageUrl(portalId: string, token: string): string {
+  const base = process.env.BOOKING_PORTAL_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || ""
+  const path = `/appointment/manage/${portalId}?token=${token}`
+  return base ? `${base}${path}` : path
 }
 
 function getStartEnd(date: string, timeSlot: string) {
@@ -227,6 +234,23 @@ export async function POST(request: Request) {
     }
 
     if (mode === "mock") {
+      let portal: { id: string; token: string; expiresAt: string } | null = null
+      try {
+        portal = await createBookingPortal({
+          bookingId: `mock_${Date.now()}`,
+          name: payload.name,
+          email: payload.email,
+          company: payload.company,
+          bookingType: payload.bookingType,
+          date: payload.date,
+          timeSlot: payload.timeSlot,
+          agenda: payload.agenda,
+          location: payload.location,
+        })
+      } catch (error) {
+        console.error("Failed to create booking portal (mock):", error)
+      }
+
       return NextResponse.json({
         ok: true,
         mode,
@@ -245,6 +269,13 @@ export async function POST(request: Request) {
           ],
           optionalEnvForGcpMode: ["RESEND_API_KEY", "RESEND_FROM"],
         },
+        managePortal: portal
+          ? {
+              id: portal.id,
+              expiresAt: portal.expiresAt,
+              url: buildManageUrl(portal.id, portal.token),
+            }
+          : null,
       })
     }
 
@@ -324,6 +355,26 @@ export async function POST(request: Request) {
       `
     )
 
+    let portal: { id: string; token: string; expiresAt: string } | null = null
+    try {
+      portal = await createBookingPortal({
+        bookingId: event.id || `evt_${Date.now()}`,
+        name: payload.name,
+        email: payload.email,
+        company: payload.company,
+        bookingType: payload.bookingType,
+        date: payload.date,
+        timeSlot: payload.timeSlot,
+        agenda: payload.agenda,
+        location: payload.location,
+        calendarEventId: event.id,
+        calendarEventUrl: event.htmlLink,
+        meetUrl: event.hangoutLink,
+      })
+    } catch (error) {
+      console.error("Failed to create booking portal (gcp):", error)
+    }
+
     return NextResponse.json({
       ok: true,
       mode,
@@ -333,6 +384,13 @@ export async function POST(request: Request) {
       meetUrl: event.hangoutLink,
       location: event.location,
       resend: mailResult,
+      managePortal: portal
+        ? {
+            id: portal.id,
+            expiresAt: portal.expiresAt,
+            url: buildManageUrl(portal.id, portal.token),
+          }
+        : null,
     })
   } catch (error) {
     return NextResponse.json(

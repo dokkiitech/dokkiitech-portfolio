@@ -52,6 +52,11 @@ BOOKING_SLOT_END_HOUR=24
 # Resend（予約完了メール通知）
 RESEND_API_KEY=
 RESEND_FROM=booking@your-domain.com
+
+# 予約者専用ページ（Supabase）
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+BOOKING_PORTAL_BASE_URL=https://your-domain.com
 ```
 
 ## Zenn 連携仕様
@@ -95,6 +100,33 @@ RESEND_FROM=booking@your-domain.com
     - `対面` の場合は `location` をイベント場所に設定
     - Resend 設定時は予約完了メールを送信
     - attendees招待を有効にするには、Google Workspace の Domain-Wide Delegation + `GOOGLE_DELEGATED_USER_EMAIL` が必要
+  - Supabase設定済みの場合は、予約後に `managePortal.url`（予約者専用ページURL）を返却
+
+## Supabaseテーブル（booking_portal）
+
+```sql
+create table if not exists booking_portal (
+  id uuid primary key,
+  booking_id text not null,
+  name text not null,
+  email text not null,
+  company text,
+  booking_type text not null,
+  date text not null,
+  time_slot text not null,
+  agenda text not null,
+  location text,
+  status text not null default 'active',
+  calendar_event_id text,
+  calendar_event_url text,
+  meet_url text,
+  manage_token_hash text not null,
+  manage_password_hash text,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+```
 
 ## Vercel デプロイ手順
 
