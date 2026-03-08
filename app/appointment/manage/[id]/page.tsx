@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { format } from "date-fns"
 import { ja } from "date-fns/locale"
-import { useParams, useSearchParams } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -45,6 +45,7 @@ function buildFallbackSlots(date: string, bookingType: "meet" | "対面"): strin
 
 export default function ManageBookingPage() {
   const params = useParams<{ id: string }>()
+  const router = useRouter()
   const search = useSearchParams()
   const token = search.get("token") || ""
 
@@ -56,7 +57,14 @@ export default function ManageBookingPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
-  const [completion, setCompletion] = useState<{ title: string; description: string; detail?: string; infoLines?: string[] } | null>(null)
+  const [completion, setCompletion] = useState<{
+    title: string
+    description: string
+    detail?: string
+    infoLines?: string[]
+    actionLabel: string
+    action: "back" | "home"
+  } | null>(null)
   const [form, setForm] = useState({
     date: "",
     timeSlot: "",
@@ -198,6 +206,8 @@ export default function ManageBookingPage() {
           ...(bookingType === "対面" ? [`場所: ${location || "-"}`] : []),
         ],
         description: "予約内容を更新しました。確認メールをご確認ください。",
+        actionLabel: "専用ページに戻る",
+        action: "back",
       })
       setMessage("")
       return
@@ -224,6 +234,8 @@ export default function ManageBookingPage() {
           ...(bookingType === "対面" ? [`場所: ${form.location || "-"}`] : []),
         ],
         description: "ご予約をキャンセルしました。確認メールをご確認ください。",
+        actionLabel: "ホームに戻る",
+        action: "home",
       })
       setMessage("")
       return
@@ -238,8 +250,12 @@ export default function ManageBookingPage() {
         detail={completion.detail}
         infoLines={completion.infoLines}
         description={completion.description}
-        actionLabel="専用ページに戻る"
+        actionLabel={completion.actionLabel}
         onAction={() => {
+          if (completion.action === "home") {
+            router.push("/")
+            return
+          }
           setCompletion(null)
           setMessage("")
         }}
