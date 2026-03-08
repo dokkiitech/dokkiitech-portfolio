@@ -29,6 +29,7 @@ NEXT_PUBLIC_ZENN_USERNAME=dokkiitech
 NEXT_PUBLIC_GITHUB_USERNAME=dokkiitech
 GH_TOKEN=
 # GH_TOKEN は GitHub API 認証用（public_repo 読み取りで可）
+# private含める場合は Fine-grained PAT で Metadata: Read-only + 対象リポジトリ権限
 
 # Zennフィード取得失敗時のフォールバック(JSON配列文字列)
 # ZENN_FALLBACK_ARTICLES_JSON=[{"title":"...","link":"...","pubDate":"...","description":"...","tags":["product"]}]

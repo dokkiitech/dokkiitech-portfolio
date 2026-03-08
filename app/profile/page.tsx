@@ -5,7 +5,14 @@ export const metadata = {
   description: "木戸亮輔（DOKKIITECH）のプロフィールページです。",
 }
 
-const fallbackSkills = ["Next.js", "TypeScript", "Go", "Docker", "AWS", "Tailwind CSS", "Security"]
+const fallbackSkills = [
+  { language: "Next.js", percentage: 0 },
+  { language: "TypeScript", percentage: 0 },
+  { language: "Go", percentage: 0 },
+  { language: "Docker", percentage: 0 },
+  { language: "AWS", percentage: 0 },
+  { language: "Security", percentage: 0 },
+]
 
 const socials = [
   { name: "GitHub", href: "https://github.com/dokkiitech", id: "@dokkiitech" },
@@ -43,8 +50,8 @@ export default async function ProfilePage() {
             <h2 className="text-xl font-semibold">Focus Stack</h2>
             <div className="mt-4 flex flex-wrap gap-2">
               {skills.map((item) => (
-                <span key={item} className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
-                  {item}
+                <span key={item.language} className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
+                  {item.language}{item.percentage > 0 ? ` ${item.percentage}%` : ""}
                 </span>
               ))}
             </div>
