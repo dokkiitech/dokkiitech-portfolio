@@ -4,12 +4,14 @@ import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { ZennArticle } from "@/lib/zenn"
+import type { FocusStackItem } from "@/lib/github"
 
 type Mode = "terminal" | "ui"
 
 interface PortfolioExperienceProps {
   blogArticles: ZennArticle[]
   productArticles: ZennArticle[]
+  focusStack: FocusStackItem[]
 }
 
 interface TerminalLine {
@@ -42,7 +44,7 @@ const pageMap: Record<string, string> = {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-export function PortfolioExperience({ blogArticles, productArticles }: PortfolioExperienceProps) {
+export function PortfolioExperience({ blogArticles, productArticles, focusStack }: PortfolioExperienceProps) {
   const router = useRouter()
   const [mode, setMode] = useState<Mode>("terminal")
   const [history, setHistory] = useState<TerminalLine[]>([])
@@ -58,13 +60,29 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
       ls: [
         "/home /profile /blog /products /contact /appointment",
       ],
-      profile: ["木戸亮輔 / DOKKIITECH", "Webアプリ開発・プロダクト設計・技術発信を中心に活動中。"],
+      profile: [
+        "木戸亮輔 / DOKKIITECH",
+        "主領域: バックエンド",
+        "GitHub 技術スタック:",
+        ...(focusStack.length > 0
+          ? focusStack.map((item) => {
+              const filled = Math.max(1, Math.round(item.percentage / 5))
+              const bar = `${"█".repeat(filled)}${"░".repeat(20 - filled)}`
+              return `${item.language.padEnd(14, " ")} [${bar}] ${item.percentage}%`
+            })
+          : ["(stack data unavailable)"]),
+        "SNS ID:",
+        "[X]          @dokkiitech",
+        "[Instagram]  @dokkiitech",
+        "[Zenn]       @dokkiitech",
+        "[GitHub]     @dokkiitech",
+      ],
       blog: blogArticles.slice(0, 3).map((item) => `- ${item.title}`),
       product: productArticles.slice(0, 3).map((item) => `- ${item.title}`),
       sns: snsLinks.map((item) => `- ${item.label}: ${item.href}`),
       booking: ["予約ページ: /appointment", "cd booking で移動できます。"],
     }),
-    [blogArticles, productArticles]
+    [blogArticles, productArticles, focusStack]
   )
 
   const pushLine = (kind: TerminalLine["kind"], text: string): number => {
@@ -245,7 +263,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
               <p className="text-xs tracking-[0.25em] text-cyan-300">PROFILE</p>
               <h2 className="mt-2 text-3xl font-bold">木戸亮輔 / DOKKIITECH</h2>
               <p className="mt-4 max-w-3xl text-muted-foreground">
-                セキュリティ学習を土台に、Next.js / TypeScript / Go を中心としたプロダクト開発を実践。技術検証や開発知見を Zenn（@dokkiitech）で発信しています。
+                初めまして或いはこんにちは、木戸です。28卒の学生エンジニアです。主領域はバックエンドで、インフラ周りやフロントエンドも適度に扱います。様々なIT団体を運営し、技術力向上と地域のIT文化活性化に取り組んでいます。自宅サーバー「dokkiitech Region」でプロダクト更新も継続しています。
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
                 {["Next.js", "TypeScript", "Go", "Docker", "AWS", "Security"].map((tag) => (
