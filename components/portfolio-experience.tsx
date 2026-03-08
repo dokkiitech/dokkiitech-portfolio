@@ -326,6 +326,13 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
                   value={command}
                   onChange={(e) => setCommand(e.target.value)}
                   onKeyDown={(e) => {
+                    if (e.ctrlKey && e.key.toLowerCase() === "c" && isTyping) {
+                      e.preventDefault()
+                      typingSessionRef.current = Date.now()
+                      setIsTyping(false)
+                      pushLine("output", "^C")
+                      return
+                    }
                     if (e.ctrlKey && e.key.toLowerCase() === "l") {
                       e.preventDefault()
                       setHistory([])
