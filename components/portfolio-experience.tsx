@@ -233,7 +233,7 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
       >
         {mode === "terminal" ? (
           <section
-            className="h-[calc(100vh-11rem)] w-full rounded-none border-y border-border/40 bg-white/80 p-4 shadow-xl shadow-slate-300/25 dark:bg-black/80 dark:shadow-black/20"
+            className="min-h-[calc(100vh-11rem)] w-full rounded-none border-y border-border/40 bg-white/80 p-4 shadow-xl shadow-slate-300/25 dark:bg-black/80 dark:shadow-black/20"
             onClick={() => terminalInputRef.current?.focus()}
           >
             <div className="mb-4 flex items-start justify-between gap-3">
