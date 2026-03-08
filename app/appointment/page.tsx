@@ -111,7 +111,8 @@ export default function AppointPage() {
         body: JSON.stringify(values),
       })
       const result = await response.json()
-      setServerMessage(result.message || "送信が完了しました。")
+      const detail = [result.message, result.hint, result.error].filter(Boolean).join("\n")
+      setServerMessage(detail || "送信が完了しました。")
       if (result.ok) {
         reset({ bookingType: values.bookingType, timeSlot: "" })
         setSelectedDate(undefined)

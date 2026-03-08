@@ -43,6 +43,20 @@ function envOrThrow(key: string): string {
   return value
 }
 
+function buildGoogleErrorHint(reason: string): string {
+  const lower = reason.toLowerCase()
+  if (lower.includes("insufficient permissions") || lower.includes("forbidden")) {
+    return "サービスアカウントの権限不足です。対象カレンダーで「予定の変更」権限を付与してください。"
+  }
+  if (lower.includes("conference") || lower.includes("hangout")) {
+    return "Meet URL生成に失敗しています。Google Workspace/Meet利用可否、または会議データ作成権限を確認してください。"
+  }
+  if (lower.includes("not found")) {
+    return "GOOGLE_CALENDAR_CALENDAR_ID が不正か、対象カレンダーにアクセス権がありません。"
+  }
+  return "Google Calendar API のエラー内容を確認してください。"
+}
+
 async function createGoogleAccessToken(): Promise<string> {
   const clientEmail = envOrThrow("GOOGLE_SERVICE_ACCOUNT_EMAIL")
   const privateKey = envOrThrow("GOOGLE_PRIVATE_KEY").replace(/\\n/g, "\n")
@@ -256,7 +270,13 @@ export async function POST(request: Request) {
     if (!createEventResponse.ok) {
       const reason = await createEventResponse.text()
       return NextResponse.json(
-        { ok: false, mode, message: "Google Calendar への予約登録に失敗しました。", error: reason },
+        {
+          ok: false,
+          mode,
+          message: "Google Calendar への予約登録に失敗しました。",
+          error: reason,
+          hint: buildGoogleErrorHint(reason),
+        },
         { status: 502 }
       )
     }
