@@ -191,7 +191,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
 
         {mode === "terminal" ? (
           <section
-            className="h-[calc(100vh-11rem)] w-full rounded-none border-y border-border bg-white/80 p-4 shadow-2xl shadow-slate-300/40 dark:bg-black/80 dark:shadow-black/30"
+            className="h-[calc(100vh-11rem)] w-full rounded-none border-y border-border/40 bg-white/80 p-4 shadow-xl shadow-slate-300/25 dark:bg-black/80 dark:shadow-black/20"
             onClick={() => terminalInputRef.current?.focus()}
           >
             <div className="mb-4 flex items-center gap-2">
