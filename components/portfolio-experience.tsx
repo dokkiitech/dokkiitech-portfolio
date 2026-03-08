@@ -156,7 +156,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
     <main
       className={
         mode === "terminal"
-          ? "min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-slate-100"
+          ? "min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white text-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-black dark:text-slate-100"
           : "min-h-screen bg-background text-foreground"
       }
     >
@@ -167,7 +167,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
             : "mx-auto max-w-6xl px-4 pb-20 pt-24"
         }
       >
-        <header className={`${mode === "terminal" ? "mx-4 border-slate-700 bg-slate-900/70" : "border-border bg-background/80"} mb-6 rounded-2xl border p-4 backdrop-blur`}>
+        <header className={`${mode === "terminal" ? "mx-4 border-border bg-card/80" : "border-border bg-background/80"} mb-6 rounded-2xl border p-4 backdrop-blur`}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h1 className="text-xl font-semibold">DOKKIITECH Portfolio</h1>
             <div className={`inline-flex rounded-lg p-1 text-sm ${mode === "terminal" ? "border border-slate-600" : "border border-border"}`}>
@@ -191,7 +191,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
 
         {mode === "terminal" ? (
           <section
-            className="h-[calc(100vh-11rem)] w-full rounded-none border-y border-slate-700 bg-black/80 p-4 shadow-2xl shadow-black/30"
+            className="h-[calc(100vh-11rem)] w-full rounded-none border-y border-border bg-white/80 p-4 shadow-2xl shadow-slate-300/40 dark:bg-black/80 dark:shadow-black/30"
             onClick={() => terminalInputRef.current?.focus()}
           >
             <div className="mb-4 flex items-center gap-2">
@@ -201,11 +201,11 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
             </div>
             <div className="space-y-1 font-mono text-sm">
               {history.map((line) => (
-                <p key={line.id} className={line.kind === "command" ? "text-emerald-300" : "text-slate-200"}>
+                <p key={line.id} className={line.kind === "command" ? "text-emerald-600 dark:text-emerald-300" : "text-slate-700 dark:text-slate-200"}>
                   {line.text}
                 </p>
               ))}
-              <label className="flex items-center gap-2 text-emerald-300">
+              <label className="flex items-center gap-2 text-emerald-600 dark:text-emerald-300">
                 <span>{prompt}</span>
                 <input
                   ref={terminalInputRef}
@@ -216,7 +216,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
                       void execute()
                     }
                   }}
-                  className="w-full bg-transparent text-base text-slate-100 outline-none md:text-sm"
+                  className="w-full bg-transparent text-base text-foreground outline-none md:text-sm"
                   placeholder={isTyping ? "出力中..." : "コマンドを入力 (例: cd blog)"}
                 />
               </label>
