@@ -5,6 +5,7 @@ import { eachDayOfInterval, endOfMonth, format, startOfMonth } from "date-fns"
 import { ja } from "date-fns/locale"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { Check } from "lucide-react"
 import { bookingSchema, type BookingInput } from "@/lib/booking"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -141,18 +142,8 @@ export default function AppointPage() {
     return (
       <main className="min-h-screen bg-background text-foreground">
         <section className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-4 text-center">
-          <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full border-4 border-emerald-500/50 bg-emerald-500/15">
-            <svg
-              viewBox="0 0 24 24"
-              className="h-12 w-12 animate-[fadeIn_0.5s_ease-out] text-emerald-500"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5 13l4 4L19 7" />
-            </svg>
+          <div className="mb-6 flex h-24 w-24 animate-pulse items-center justify-center rounded-full bg-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.45)]">
+            <Check className="h-12 w-12 animate-bounce text-white" strokeWidth={3.5} />
           </div>
           <h1 className="animate-fade-in text-4xl font-bold">予約完了</h1>
           <p className="mt-4 text-muted-foreground">
