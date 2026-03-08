@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 interface BookingCompletionScreenProps {
   title: string
   detail?: string
+  infoLines?: string[]
   description: string
   actionLabel: string
   onAction: () => void
@@ -14,6 +15,7 @@ interface BookingCompletionScreenProps {
 export function BookingCompletionScreen({
   title,
   detail,
+  infoLines,
   description,
   actionLabel,
   onAction,
@@ -26,6 +28,16 @@ export function BookingCompletionScreen({
         </div>
         <h1 className="animate-fade-in text-4xl font-bold">{title}</h1>
         {detail ? <p className="mt-4 text-muted-foreground">{detail}</p> : null}
+        {infoLines && infoLines.length > 0 ? (
+          <div className="mt-4 w-full max-w-md rounded-lg border border-border bg-card p-4 text-left text-sm">
+            <p className="mb-2 font-semibold">現在の予約情報</p>
+            <ul className="space-y-1 text-muted-foreground">
+              {infoLines.map((line, idx) => (
+                <li key={`${line}-${idx}`}>{line}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <p className="mt-2 text-sm text-muted-foreground">{description}</p>
         <Button className="mt-8" onClick={onAction}>
           {actionLabel}

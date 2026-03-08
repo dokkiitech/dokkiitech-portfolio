@@ -56,7 +56,7 @@ export default function ManageBookingPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
-  const [completion, setCompletion] = useState<{ title: string; description: string; detail?: string } | null>(null)
+  const [completion, setCompletion] = useState<{ title: string; description: string; detail?: string; infoLines?: string[] } | null>(null)
   const [form, setForm] = useState({
     date: "",
     timeSlot: "",
@@ -181,9 +181,22 @@ export default function ManageBookingPage() {
     })
     const json = await response.json()
     if (response.ok && json.ok) {
+      const nextRecord = json.record as
+        | { booking_type?: "meet" | "対面"; date?: string; time_slot?: string; location?: string | null }
+        | undefined
+      const bookingType = nextRecord?.booking_type || record?.bookingType || "meet"
+      const date = nextRecord?.date || form.date
+      const timeSlot = nextRecord?.time_slot || form.timeSlot
+      const location = nextRecord?.location || form.location
       setCompletion({
         title: "予約変更完了",
-        detail: `${form.date} ${form.timeSlot}`,
+        detail: `${date} ${timeSlot}`,
+        infoLines: [
+          `日程: ${date}`,
+          `時間: ${timeSlot}`,
+          `形式: ${bookingType === "meet" ? "Google Meet" : "対面"}`,
+          ...(bookingType === "対面" ? [`場所: ${location || "-"}`] : []),
+        ],
         description: "予約内容を更新しました。確認メールをご確認ください。",
       })
       setMessage("")
@@ -200,9 +213,16 @@ export default function ManageBookingPage() {
     })
     const json = await response.json()
     if (response.ok && json.ok) {
+      const bookingType = record?.bookingType || "meet"
       setCompletion({
         title: "予約キャンセル完了",
         detail: `${form.date} ${form.timeSlot}`,
+        infoLines: [
+          `日程: ${form.date}`,
+          `時間: ${form.timeSlot}`,
+          `形式: ${bookingType === "meet" ? "Google Meet" : "対面"}`,
+          ...(bookingType === "対面" ? [`場所: ${form.location || "-"}`] : []),
+        ],
         description: "ご予約をキャンセルしました。確認メールをご確認ください。",
       })
       setMessage("")
@@ -216,6 +236,7 @@ export default function ManageBookingPage() {
       <BookingCompletionScreen
         title={completion.title}
         detail={completion.detail}
+        infoLines={completion.infoLines}
         description={completion.description}
         actionLabel="専用ページに戻る"
         onAction={() => {
