@@ -6,6 +6,7 @@ const prompt = "dokkiitech@portfolio:~$"
 
 export function FirstVisitLoader() {
   const [show, setShow] = useState(false)
+  const [closing, setClosing] = useState(false)
   const [visibleCount, setVisibleCount] = useState(1)
 
   const logs = useMemo(
@@ -45,7 +46,11 @@ export function FirstVisitLoader() {
     }, intervalMs)
 
     const hideTimer = setTimeout(() => {
-      setShow(false)
+      setClosing(true)
+      setTimeout(() => {
+        setShow(false)
+        setClosing(false)
+      }, 360)
     }, intervalMs * logs.length + 2000)
 
     return () => {
@@ -57,7 +62,11 @@ export function FirstVisitLoader() {
   if (!show) return null
 
   return (
-    <div className="fixed inset-0 z-[10000] bg-black p-6 font-mono text-sm text-emerald-300 md:p-8">
+    <div
+      className={`fixed inset-0 z-[10000] bg-black p-6 font-mono text-sm text-emerald-300 transition-all duration-300 md:p-8 ${
+        closing ? "scale-95 opacity-0" : "scale-100 opacity-100"
+      }`}
+    >
       <div className="mb-4 flex items-center gap-2">
         <span className="h-3 w-3 rounded-full bg-red-400" />
         <span className="h-3 w-3 rounded-full bg-yellow-400" />
