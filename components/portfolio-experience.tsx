@@ -256,17 +256,6 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
               <span className="h-3 w-3 rounded-full bg-green-400" />
             </div>
             <div className="space-y-1 font-mono text-sm">
-              <pre className="mb-4 overflow-x-auto rounded border border-border/40 bg-muted/30 p-3 text-xs leading-5 text-muted-foreground">
-{`┌──────────────────────────────────────────────┐
-│ DOKKIITECH TERMINAL v1.0                     │
-│ Runtime  : portfolio-shell                   │
-│ Profile  : dokkiitech                        │
-│ Mode     : interactive                       │
-└──────────────────────────────────────────────┘
-[boot] loading command registry...
-[boot] loading portfolio modules...
-[boot] ready.`}
-              </pre>
               {history.map((line) => (
                 <p key={line.id} className={line.kind === "command" ? "text-emerald-600 dark:text-emerald-300" : "text-slate-700 dark:text-slate-200"}>
                   {line.text}
