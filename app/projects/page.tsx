@@ -6,30 +6,30 @@ import { Button } from "@/components/ui/button"
 
 export const metadata = {
   title: "Projects | DOKKIITECH",
-  description: "Selected web projects and product work.",
+  description: "制作実績とプロダクト開発の紹介ページです。",
 }
 
 const projects = [
   {
     title: "Portfolio Redesign",
-    summary: "A clean and responsive Next.js portfolio focused on clear information architecture.",
+    summary: "情報設計を見直し、見やすさと導線を重視して再構成したポートフォリオです。",
     tags: ["Next.js", "TypeScript", "Tailwind CSS"],
     href: "/",
-    cta: "Open Site",
+    cta: "サイトを見る",
   },
   {
-    title: "Zenn Product Feed",
-    summary: "Product listing powered by external article feeds with filtering and lightweight caching.",
+    title: "Zenn連携コンテンツ",
+    summary: "外部記事フィードを活用し、情報を整理して表示するコンテンツ連携の実装です。",
     tags: ["SSR", "Content Integration", "Performance"],
     href: "/products",
-    cta: "View Source Page",
+    cta: "ページを見る",
   },
   {
-    title: "Contact Experience",
-    summary: "Simple and accessible contact routes for collaboration, support, and project inquiries.",
+    title: "Contact導線設計",
+    summary: "相談・依頼・連絡がしやすいように設計したシンプルな問い合わせ導線です。",
     tags: ["UX", "Accessibility", "Responsive UI"],
     href: "/contact",
-    cta: "Contact",
+    cta: "お問い合わせ",
   },
 ]
 
@@ -40,7 +40,7 @@ export default function ProjectsPage() {
         <div className="mb-12 text-center">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Projects</h1>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-            A curated selection of work that demonstrates product thinking, engineering quality, and fast execution.
+            プロダクト思考と実装品質を重視して進めた制作・開発実績を掲載しています。
           </p>
         </div>
 

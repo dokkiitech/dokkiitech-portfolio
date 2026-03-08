@@ -39,7 +39,7 @@ export default function ContactPage() {
         <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-sky-600 to-cyan-600 bg-clip-text text-transparent">
           Contact
         </h1>
-        <p className="text-xl text-muted-foreground">Open for project collaboration and technical consulting.</p>
+        <p className="text-xl text-muted-foreground">お仕事のご相談・技術相談などお気軽にご連絡ください</p>
       </div>
 
       <div className="grid gap-8 md:grid-cols-2">
@@ -50,7 +50,7 @@ export default function ContactPage() {
               <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                 <Mail className="w-6 h-6 text-white" />
               </div>
-              <h2 className="text-2xl font-bold">Social</h2>
+              <h2 className="text-2xl font-bold">SNS</h2>
             </div>
             <div className="space-y-4">
               {socialLinks.map((link) => (
@@ -83,14 +83,14 @@ export default function ContactPage() {
             </div>
             <div className="space-y-6">
               <p className="text-muted-foreground leading-relaxed">
-                Reach out for product development, front-end engineering, technical consultation, or partnership ideas.
+                プロジェクトのご相談、技術的な質問、コラボレーションのお誘いなど、どんな内容でも歓迎です。
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                For urgent requests, a direct message on social channels is usually the fastest route.
+                お急ぎの場合は、SNSのダイレクトメッセージでご連絡いただくとスムーズです。
               </p>
               <div className="p-4 bg-muted/50 rounded-2xl">
                 <p className="text-sm text-muted-foreground">
-                  Typical response time is within 24 hours. Include project scope, timeline, and goals for faster alignment.
+                  通常24時間以内に返信します。ご依頼内容・希望納期・目的があると初回返信がより正確になります。
                 </p>
               </div>
             </div>
