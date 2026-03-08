@@ -166,6 +166,37 @@ async function checkSlotBusy(accessToken: string, calendarId: string, date: stri
   return busyList.length > 0
 }
 
+async function hasAllDayBusyEvent(accessToken: string, calendarId: string, date: string): Promise<boolean> {
+  const nextDate = addDays(date, 1)
+  const dayStartIso = new Date(`${date}T00:00:00${DEFAULT_OFFSET}`).toISOString()
+  const dayEndIso = new Date(`${nextDate}T00:00:00${DEFAULT_OFFSET}`).toISOString()
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?singleEvents=true&timeMin=${encodeURIComponent(dayStartIso)}&timeMax=${encodeURIComponent(dayEndIso)}&maxResults=250`
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Events list request failed: ${await response.text()}`)
+  }
+
+  const json = (await response.json()) as {
+    items?: Array<{
+      status?: string
+      transparency?: string
+      start?: { date?: string; dateTime?: string }
+      end?: { date?: string; dateTime?: string }
+    }>
+  }
+
+  return (json.items || []).some((item) => {
+    if (item.status === "cancelled") return false
+    if (item.transparency === "transparent") return false
+    return Boolean(item.start?.date || item.end?.date)
+  })
+}
+
 async function listAvailableSlots(accessToken: string, calendarId: string, date: string): Promise<string[]> {
   const candidates = getDefaultSlots(date)
   const result: string[] = []
@@ -246,6 +277,15 @@ export async function GET(request: Request) {
 
     const calendarId = envOrThrow("GOOGLE_CALENDAR_CALENDAR_ID")
     const accessToken = await createGoogleAccessToken()
+    if (await hasAllDayBusyEvent(accessToken, calendarId, date)) {
+      return NextResponse.json({
+        ok: true,
+        mode,
+        date,
+        slots: [],
+        allDayBusyMessage: "この日は終日予定が入っているため予約できません。",
+      })
+    }
     const slots = (await listAvailableSlots(accessToken, calendarId, date)).filter((slot) => !isPastSlot(date, slot))
     return NextResponse.json({ ok: true, mode, date, slots })
   } catch (error) {
@@ -341,6 +381,12 @@ export async function POST(request: Request) {
 
     const calendarId = envOrThrow("GOOGLE_CALENDAR_CALENDAR_ID")
     const accessToken = await createGoogleAccessToken()
+    if (await hasAllDayBusyEvent(accessToken, calendarId, payload.date)) {
+      return NextResponse.json(
+        { ok: false, mode, message: "この日は終日予定が入っているため予約できません。別の日付を選択してください。" },
+        { status: 409 }
+      )
+    }
     const busy = await checkSlotBusy(accessToken, calendarId, payload.date, payload.timeSlot)
     if (busy) {
       return NextResponse.json(

@@ -106,6 +106,34 @@ async function checkSlotBusy(accessToken: string, calendarId: string, date: stri
   return (json.calendars?.[calendarId]?.busy || []).length > 0
 }
 
+async function hasAllDayBusyEvent(accessToken: string, calendarId: string, date: string): Promise<boolean> {
+  const nextDate = addDays(date, 1)
+  const dayStartIso = new Date(`${date}T00:00:00${DEFAULT_OFFSET}`).toISOString()
+  const dayEndIso = new Date(`${nextDate}T00:00:00${DEFAULT_OFFSET}`).toISOString()
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?singleEvents=true&timeMin=${encodeURIComponent(dayStartIso)}&timeMax=${encodeURIComponent(dayEndIso)}&maxResults=250`
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+  if (!response.ok) throw new Error(`Events list request failed: ${await response.text()}`)
+
+  const json = (await response.json()) as {
+    items?: Array<{
+      status?: string
+      transparency?: string
+      start?: { date?: string; dateTime?: string }
+      end?: { date?: string; dateTime?: string }
+    }>
+  }
+
+  return (json.items || []).some((item) => {
+    if (item.status === "cancelled") return false
+    if (item.transparency === "transparent") return false
+    return Boolean(item.start?.date || item.end?.date)
+  })
+}
+
 async function sendResendMail(to: string, subject: string, html: string) {
   const apiKey = process.env.RESEND_API_KEY
   const from = process.env.RESEND_FROM
@@ -172,6 +200,13 @@ export async function PATCH(
       const accessToken = await createGoogleAccessToken()
       const changedSlot = nextDate !== checked.record.date || nextTimeSlot !== checked.record.time_slot
       if (changedSlot) {
+        const allDayBusy = await hasAllDayBusyEvent(accessToken, calendarId, nextDate)
+        if (allDayBusy) {
+          return NextResponse.json(
+            { ok: false, message: "この日は終日予定が入っているため予約できません。別の日付を選択してください。" },
+            { status: 409 }
+          )
+        }
         const busy = await checkSlotBusy(accessToken, calendarId, nextDate, nextTimeSlot)
         if (busy) {
           return NextResponse.json(
