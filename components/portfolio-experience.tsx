@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import type { ZennArticle } from "@/lib/zenn"
 
 type Mode = "terminal" | "ui"
@@ -24,50 +25,124 @@ const snsLinks = [
   { label: "Zenn", href: "https://zenn.dev/dokkiitech" },
 ]
 
+const pageMap: Record<string, string> = {
+  home: "/",
+  profile: "/profile",
+  blog: "/blog",
+  product: "/products",
+  products: "/products",
+  booking: "/appoint",
+  appoint: "/appoint",
+  sns: "/#sns",
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
 export function PortfolioExperience({ blogArticles, productArticles }: PortfolioExperienceProps) {
+  const router = useRouter()
   const [mode, setMode] = useState<Mode>("ui")
-  const [history, setHistory] = useState<TerminalLine[]>([
-    { id: 1, kind: "output", text: "Portfolio terminalへようこそ。`help` でコマンド一覧を表示できます。" },
-  ])
+  const [history, setHistory] = useState<TerminalLine[]>([])
   const [command, setCommand] = useState("")
+  const [isTyping, setIsTyping] = useState(false)
+  const lineIdRef = useRef(0)
+  const typingSessionRef = useRef(0)
 
   const commandMap = useMemo(
     () => ({
-      help: [
-        "利用可能コマンド: help, profile, blog, product, sns, booking, clear",
-      ],
-      profile: [
-        "木戸亮輔 / DOKKIITECH",
-        "Webアプリ開発・プロダクト設計・技術発信を中心に活動中。",
-      ],
+      help: ["利用可能: help, profile, blog, product, sns, booking, cd <page>, clear"],
+      profile: ["木戸亮輔 / DOKKIITECH", "Webアプリ開発・プロダクト設計・技術発信を中心に活動中。"],
       blog: blogArticles.slice(0, 3).map((item) => `- ${item.title}`),
       product: productArticles.slice(0, 3).map((item) => `- ${item.title}`),
       sns: snsLinks.map((item) => `- ${item.label}: ${item.href}`),
-      booking: ["予約ページ: /appoint"],
+      booking: ["予約ページ: /appoint", "cd booking で移動できます。"],
     }),
     [blogArticles, productArticles]
   )
 
-  const execute = () => {
-    const trimmed = command.trim().toLowerCase()
-    if (!trimmed) return
+  const pushLine = (kind: TerminalLine["kind"], text: string): number => {
+    const id = ++lineIdRef.current
+    setHistory((prev) => [...prev, { id, kind, text }])
+    return id
+  }
 
-    if (trimmed === "clear") {
+  const updateLine = (id: number, text: string) => {
+    setHistory((prev) => prev.map((line) => (line.id === id ? { ...line, text } : line)))
+  }
+
+  const typeLine = async (text: string, sessionId: number) => {
+    const id = pushLine("output", "")
+    let current = ""
+    setIsTyping(true)
+    for (const ch of text) {
+      if (typingSessionRef.current !== sessionId) return
+      current += ch
+      updateLine(id, current)
+      await sleep(14)
+    }
+    setIsTyping(false)
+  }
+
+  const typeLines = async (lines: string[], sessionId: number) => {
+    for (const line of lines) {
+      if (typingSessionRef.current !== sessionId) return
+      await typeLine(line, sessionId)
+      await sleep(90)
+    }
+  }
+
+  useEffect(() => {
+    if (mode !== "terminal") return
+    const sessionId = Date.now()
+    typingSessionRef.current = sessionId
+    setHistory([])
+    typeLines(
+      [
+        "Portfolio terminalへようこそ。",
+        "一文字ずつログを表示しています...",
+        "help でコマンド一覧を表示できます。",
+      ],
+      sessionId
+    )
+  }, [mode])
+
+  const handleCd = async (rawTarget: string, sessionId: number) => {
+    const target = rawTarget.replace(/^\/+/, "").trim().toLowerCase()
+    const path = pageMap[target]
+    if (!path) {
+      await typeLines([`cd: ${rawTarget}: No such directory`], sessionId)
+      return
+    }
+    await typeLines([`opening ${path} ...`], sessionId)
+    router.push(path)
+  }
+
+  const execute = async () => {
+    const raw = command.trim()
+    const lower = raw.toLowerCase()
+    if (!raw || isTyping) return
+
+    const sessionId = Date.now()
+    typingSessionRef.current = sessionId
+    pushLine("command", `${prompt} ${raw}`)
+
+    if (lower === "clear") {
       setHistory([])
       setCommand("")
       return
     }
 
-    const outputs = commandMap[trimmed as keyof typeof commandMap] || [
-      `command not found: ${trimmed}`,
+    if (lower.startsWith("cd ")) {
+      await handleCd(raw.slice(3), sessionId)
+      setCommand("")
+      return
+    }
+
+    const outputs = commandMap[lower as keyof typeof commandMap] || [
+      `command not found: ${lower}`,
       "help を入力して使えるコマンドを確認してください。",
     ]
 
-    setHistory((prev) => [
-      ...prev,
-      { id: Date.now(), kind: "command", text: `${prompt} ${trimmed}` },
-      ...outputs.map((text, idx) => ({ id: Date.now() + idx + 1, kind: "output" as const, text })),
-    ])
+    await typeLines(outputs, sessionId)
     setCommand("")
   }
 
@@ -115,10 +190,12 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
                   value={command}
                   onChange={(e) => setCommand(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") execute()
+                    if (e.key === "Enter") {
+                      void execute()
+                    }
                   }}
                   className="w-full bg-transparent text-slate-100 outline-none"
-                  placeholder="コマンドを入力"
+                  placeholder={isTyping ? "出力中..." : "コマンドを入力 (例: cd blog)"}
                 />
               </label>
             </div>
