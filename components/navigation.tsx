@@ -13,7 +13,7 @@ const navigation = [
   { name: "ブログ", href: "/blog" },
   { name: "Product", href: "/products" },
   { name: "SNS", href: "/contact" },
-  { name: "予約", href: "/appointment" },
+  { name: "お打ち合わせの予約", href: "/appointment" },
 ]
 
 export function Navigation() {
