@@ -55,7 +55,10 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
   const commandMap = useMemo(
     () => ({
       help: ["利用可能: help, ls, profile, blog, product, sns, booking, cd <page>, clear"],
-      ls: ["blog  products  profile  contact  appointment  home"],
+      ls: [
+        "blog products profile contact appointment home",
+        "/home /profile /blog /products /contact /appointment",
+      ],
       profile: ["木戸亮輔 / DOKKIITECH", "Webアプリ開発・プロダクト設計・技術発信を中心に活動中。"],
       blog: blogArticles.slice(0, 3).map((item) => `- ${item.title}`),
       product: productArticles.slice(0, 3).map((item) => `- ${item.title}`),
@@ -112,7 +115,9 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
   }, [mode])
 
   const handleCd = async (rawTarget: string, sessionId: number) => {
-    const target = rawTarget.replace(/^\/+/, "").trim().toLowerCase()
+    const trimmed = rawTarget.trim().toLowerCase()
+    const normalized = trimmed.replace(/^~\//, "").replace(/^\/+/, "")
+    const target = normalized || "home"
     const path = pageMap[target]
     if (!path) {
       await typeLines([`cd: ${rawTarget}: No such directory`], sessionId)
