@@ -40,6 +40,7 @@ BOOKING_BACKEND_MODE=mock
 GOOGLE_CALENDAR_CALENDAR_ID=
 GOOGLE_SERVICE_ACCOUNT_EMAIL=
 GOOGLE_PRIVATE_KEY=
+GOOGLE_DELEGATED_USER_EMAIL=
 
 # 任意（未指定時は既定値）
 BOOKING_TIMEZONE=Asia/Tokyo
@@ -93,6 +94,7 @@ RESEND_FROM=booking@your-domain.com
     - `meet` の場合は Meet URL 自動発行
     - `対面` の場合は `location` をイベント場所に設定
     - Resend 設定時は予約完了メールを送信
+    - attendees招待を有効にするには、Google Workspace の Domain-Wide Delegation + `GOOGLE_DELEGATED_USER_EMAIL` が必要
 
 ## Vercel デプロイ手順
 

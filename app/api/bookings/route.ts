@@ -45,6 +45,9 @@ function envOrThrow(key: string): string {
 
 function buildGoogleErrorHint(reason: string): string {
   const lower = reason.toLowerCase()
+  if (lower.includes("forbiddenforserviceaccounts")) {
+    return "attendees招待には Domain-Wide Delegation が必要です。GOOGLE_DELEGATED_USER_EMAIL を設定し、管理コンソールで Calendar スコープを委任してください。"
+  }
   if (lower.includes("insufficient permissions") || lower.includes("forbidden")) {
     return "サービスアカウントの権限不足です。対象カレンダーで「予定の変更」権限を付与してください。"
   }
@@ -60,6 +63,7 @@ function buildGoogleErrorHint(reason: string): string {
 async function createGoogleAccessToken(): Promise<string> {
   const clientEmail = envOrThrow("GOOGLE_SERVICE_ACCOUNT_EMAIL")
   const privateKey = envOrThrow("GOOGLE_PRIVATE_KEY").replace(/\\n/g, "\n")
+  const delegatedUser = process.env.GOOGLE_DELEGATED_USER_EMAIL
   const now = Math.floor(Date.now() / 1000)
 
   const header = { alg: "RS256", typ: "JWT" }
@@ -69,6 +73,7 @@ async function createGoogleAccessToken(): Promise<string> {
     aud: "https://oauth2.googleapis.com/token",
     exp: now + 3600,
     iat: now,
+    ...(delegatedUser ? { sub: delegatedUser } : {}),
   }
 
   const encodedHeader = Buffer.from(JSON.stringify(header)).toString("base64url")
