@@ -19,9 +19,12 @@ function getMode(): BookingMode {
 }
 
 function buildManageUrl(portalId: string, token: string): string {
-  const base = process.env.BOOKING_PORTAL_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || ""
+  const base =
+    process.env.BOOKING_PORTAL_BASE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://www.dokkiitech.com"
   const path = `/appointment/manage/${portalId}?token=${token}`
-  return base ? `${base}${path}` : path
+  return `${base}${path}`
 }
 
 function getStartEnd(date: string, timeSlot: string) {
