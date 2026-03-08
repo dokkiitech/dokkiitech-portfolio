@@ -157,6 +157,7 @@ async function sendResendMail(to: string, subject: string, html: string) {
   const apiKey = process.env.RESEND_API_KEY
   const from = process.env.RESEND_FROM
   if (!apiKey || !from) return { sent: false, reason: "RESEND_API_KEY or RESEND_FROM missing" }
+  const fromHeader = from.includes("<") ? from : `dokkiitech予約管理システム <${from}>`
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -165,7 +166,7 @@ async function sendResendMail(to: string, subject: string, html: string) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from,
+      from: fromHeader,
       to: [to],
       subject,
       html,
@@ -177,6 +178,17 @@ async function sendResendMail(to: string, subject: string, html: string) {
   }
 
   return { sent: true }
+}
+
+function formatDateJp(date: string): string {
+  const [y, m, d] = date.split("-")
+  return `${y}年${m}月${d}日`
+}
+
+function calcEndTime(timeSlot: string): string {
+  const start = new Date(`2000-01-01T${timeSlot}:00+09:00`)
+  const end = new Date(start.getTime() + SLOT_MINUTES * 60 * 1000)
+  return `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`
 }
 
 export async function GET(request: Request) {
@@ -367,19 +379,21 @@ export async function POST(request: Request) {
     }
 
     const manageUrl = portal ? buildManageUrl(portal.id, portal.token) : ""
+    const dateJp = formatDateJp(payload.date)
+    const endTime = calcEndTime(payload.timeSlot)
+    const salutation = `${payload.company ? `${payload.company} ` : ""}${payload.name} さま`
+    const formatLine = payload.bookingType === "meet" ? "Google Meet" : `対面（${payload.location || "-"})`
     const mailResult = await sendResendMail(
       payload.email,
       "予約完了のお知らせ",
       `
-      <p>${payload.name} 様</p>
-      <p>ご予約ありがとうございます。以下内容で受け付けました。</p>
+      <p>${salutation}</p>
+      <p>お打ち合わせのご予約ありがとうございます。下記の内容で受け付けました。</p>
       <ul>
-        <li>日付: ${payload.date}</li>
-        <li>時間: ${payload.timeSlot}</li>
-        <li>形式: ${payload.bookingType}</li>
-        <li>会社名: ${payload.company || "-"}</li>
-        <li>Meet URL: ${event.hangoutLink || "カレンダー招待をご確認ください"}</li>
-        <li>場所: ${payload.bookingType === "対面" ? payload.location || "-" : "-"}</li>
+        <li>日程：${dateJp}</li>
+        <li>時刻：${payload.timeSlot} - ${endTime}</li>
+        <li>形式：${formatLine}</li>
+        ${event.hangoutLink ? `<li>Meet URL：${event.hangoutLink}</li>` : ""}
       </ul>
       ${
         portal
@@ -387,7 +401,8 @@ export async function POST(request: Request) {
              <p><strong>初期パスワード:</strong> ${portal.initialPassword}</p>`
           : "<p>予約者専用ページは現在利用できません。</p>"
       }
-      <p>カレンダー招待メールも送信されています。</p>
+      <p>Googleカレンダーへの招待メールも別途送付されますのでご確認ください</p>
+      <p>当日はどうぞよろしくお願い致します。</p>
       `
     )
 
