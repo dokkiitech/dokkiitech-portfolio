@@ -106,6 +106,19 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
     }),
     [blogArticles, productArticles, focusStack]
   )
+  const terminalTitleArt = useMemo(
+    () =>
+      [
+        "██████╗  ██████╗ ██╗  ██╗██╗  ██╗██╗██╗████████╗███████╗ ██████╗██╗  ██╗",
+        "██╔══██╗██╔═══██╗██║ ██╔╝██║ ██╔╝██║██║╚══██╔══╝██╔════╝██╔════╝██║  ██║",
+        "██║  ██║██║   ██║█████╔╝ █████╔╝ ██║██║   ██║   █████╗  ██║     ███████║",
+        "██║  ██║██║   ██║██╔═██╗ ██╔═██╗ ██║██║   ██║   ██╔══╝  ██║     ██╔══██║",
+        "██████╔╝╚██████╔╝██║  ██╗██║  ██╗██║██║   ██║   ███████╗╚██████╗██║  ██║",
+        "╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝",
+        "                    PORTFOLIO TERMINAL",
+      ].join("\n"),
+    []
+  )
 
   const pushLine = (kind: TerminalLine["kind"], text: string): number => {
     const id = ++lineIdRef.current
@@ -223,39 +236,42 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
             : "mx-auto max-w-6xl px-4 pb-20 pt-24"
         }
       >
-        <header className={`${mode === "terminal" ? "mx-4 border-border bg-card/80" : "border-border bg-background/80"} mb-6 rounded-2xl border p-4 backdrop-blur`}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h1 className="text-xl font-semibold">DOKKIITECH Portfolio</h1>
-            <div className={`inline-flex rounded-lg p-1 text-sm ${mode === "terminal" ? "border border-slate-600" : "border border-border"}`}>
-              <button
-                type="button"
-                onClick={() => setMode("terminal")}
-                className={`rounded-md px-3 py-1 ${mode === "terminal" ? "bg-emerald-500/20 text-emerald-300" : "text-muted-foreground"} ${mode === "ui" ? "bg-primary/15 text-primary" : ""}`}
-              >
-                Terminal Mode
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode("ui")}
-                className={`rounded-md px-3 py-1 ${mode === "ui" ? "bg-primary/15 text-primary" : "text-muted-foreground"}`}
-              >
-                UI Mode
-              </button>
-            </div>
-          </div>
-        </header>
-
         {mode === "terminal" ? (
           <section
             className="h-[calc(100vh-11rem)] w-full rounded-none border-y border-border/40 bg-white/80 p-4 shadow-xl shadow-slate-300/25 dark:bg-black/80 dark:shadow-black/20"
             onClick={() => terminalInputRef.current?.focus()}
           >
-            <div className="mb-4 flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-red-400" />
-              <span className="h-3 w-3 rounded-full bg-yellow-400" />
-              <span className="h-3 w-3 rounded-full bg-green-400" />
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-full bg-red-400" />
+                <span className="h-3 w-3 rounded-full bg-yellow-400" />
+                <span className="h-3 w-3 rounded-full bg-green-400" />
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-md border border-emerald-300/40 bg-emerald-400/10 p-1">
+                <button
+                  type="button"
+                  onClick={() => setMode("terminal")}
+                  aria-label="Terminal Mode"
+                  title="Terminal Mode"
+                  className={`rounded px-2 py-1 text-xs ${mode === "terminal" ? "bg-emerald-500/30 text-emerald-100" : "text-emerald-300/80"}`}
+                >
+                  &gt;_
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("ui")}
+                  aria-label="UI Mode"
+                  title="UI Mode"
+                  className={`rounded px-2 py-1 text-xs ${mode === "ui" ? "bg-cyan-500/30 text-cyan-100" : "text-cyan-300/80"}`}
+                >
+                  [ ]
+                </button>
+              </div>
             </div>
             <div className="space-y-1 font-mono text-sm">
+              <pre className="mb-4 overflow-x-auto border border-emerald-400/30 bg-emerald-400/5 p-3 text-[8px] leading-tight text-emerald-300 md:text-[10px]">
+                {terminalTitleArt}
+              </pre>
               {history.map((line) => (
                 <p key={line.id} className={line.kind === "command" ? "text-emerald-600 dark:text-emerald-300" : "text-slate-700 dark:text-slate-200"}>
                   {line.text}
@@ -280,7 +296,29 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
             </div>
           </section>
         ) : (
-          <section className="space-y-8">
+          <section className="space-y-8 pt-2">
+            <div className="flex justify-end">
+              <div className="inline-flex items-center gap-2 rounded-md border border-border bg-card p-1">
+                <button
+                  type="button"
+                  onClick={() => setMode("terminal")}
+                  aria-label="Terminal Mode"
+                  title="Terminal Mode"
+                  className={`rounded px-2 py-1 text-xs ${mode === "terminal" ? "bg-primary/15 text-primary" : "text-muted-foreground"}`}
+                >
+                  &gt;_
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("ui")}
+                  aria-label="UI Mode"
+                  title="UI Mode"
+                  className={`rounded px-2 py-1 text-xs ${mode === "ui" ? "bg-primary/15 text-primary" : "text-muted-foreground"}`}
+                >
+                  [ ]
+                </button>
+              </div>
+            </div>
             <article id="profile" className="rounded-3xl border border-border bg-card p-7 shadow-sm">
               <p className="text-xs tracking-[0.25em] text-cyan-300">PROFILE</p>
               <h2 className="mt-2 text-3xl font-bold">木戸亮輔 / DOKKIITECH</h2>
