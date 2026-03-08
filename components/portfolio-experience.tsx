@@ -269,7 +269,7 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
               </div>
             </div>
             <div className="space-y-1 font-mono text-sm">
-              <pre className="mb-4 overflow-x-auto border border-emerald-400/30 bg-emerald-400/5 p-3 text-[8px] leading-tight text-emerald-300 md:text-[10px]">
+              <pre className="mb-4 overflow-x-auto border border-emerald-400/30 bg-emerald-400/5 p-3 text-[9px] leading-tight text-emerald-300 md:text-[11px]">
                 {terminalTitleArt}
               </pre>
               {history.map((line) => (
