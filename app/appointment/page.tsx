@@ -118,7 +118,7 @@ export default function AppointPage() {
       })
       const result = await response.json()
       const manageUrl = result.managePortal?.url ? `予約管理URL: ${result.managePortal.url}` : ""
-      const detail = [result.message, result.hint, manageUrl, result.error].filter(Boolean).join("\n")
+      const detail = [result.message, result.hint, manageUrl, result.managePortalError, result.error].filter(Boolean).join("\n")
       setServerMessage(detail || "送信が完了しました。")
       if (result.ok) {
         reset({ bookingType: values.bookingType, timeSlot: "" })

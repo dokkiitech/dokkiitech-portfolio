@@ -235,6 +235,7 @@ export async function POST(request: Request) {
 
     if (mode === "mock") {
       let portal: { id: string; token: string; expiresAt: string; initialPassword: string } | null = null
+      let portalError: string | null = null
       try {
         portal = await createBookingPortal({
           bookingId: `mock_${Date.now()}`,
@@ -249,6 +250,7 @@ export async function POST(request: Request) {
         })
       } catch (error) {
         console.error("Failed to create booking portal (mock):", error)
+        portalError = String(error)
       }
 
       return NextResponse.json({
@@ -277,6 +279,7 @@ export async function POST(request: Request) {
               initialPassword: portal.initialPassword,
             }
           : null,
+        managePortalError: portalError,
       })
     }
 
@@ -339,6 +342,7 @@ export async function POST(request: Request) {
     }
 
     let portal: { id: string; token: string; expiresAt: string; initialPassword: string } | null = null
+    let portalError: string | null = null
     try {
       portal = await createBookingPortal({
         bookingId: event.id || `evt_${Date.now()}`,
@@ -356,6 +360,7 @@ export async function POST(request: Request) {
       })
     } catch (error) {
       console.error("Failed to create booking portal (gcp):", error)
+      portalError = String(error)
     }
 
     const manageUrl = portal ? buildManageUrl(portal.id, portal.token) : ""
@@ -400,6 +405,7 @@ export async function POST(request: Request) {
             initialPassword: portal.initialPassword,
           }
         : null,
+      managePortalError: portalError,
     })
   } catch (error) {
     return NextResponse.json(
