@@ -57,6 +57,7 @@ export default function ManageBookingPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
+  const [actionLoading, setActionLoading] = useState<"update" | "cancel" | null>(null)
   const [completion, setCompletion] = useState<{
     title: string
     description: string
@@ -173,74 +174,84 @@ export default function ManageBookingPage() {
   }
 
   const onUpdate = async () => {
-    const response = await fetch(`/api/bookings/manage/${params.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        token,
-        password,
-        date: form.date,
-        timeSlot: form.timeSlot,
-        bookingType: record?.bookingType,
-        location: form.location,
-        company: form.company,
-        agenda: form.agenda,
-      }),
-    })
-    const json = await response.json()
-    if (response.ok && json.ok) {
-      const nextRecord = json.record as
-        | { booking_type?: "meet" | "対面"; date?: string; time_slot?: string; location?: string | null }
-        | undefined
-      const bookingType = nextRecord?.booking_type || record?.bookingType || "meet"
-      const date = nextRecord?.date || form.date
-      const timeSlot = nextRecord?.time_slot || form.timeSlot
-      const location = nextRecord?.location || form.location
-      setCompletion({
-        title: "予約変更完了",
-        detail: `${date} ${timeSlot}`,
-        infoLines: [
-          `日程: ${date}`,
-          `時間: ${timeSlot}`,
-          `形式: ${bookingType === "meet" ? "Google Meet" : "対面"}`,
-          ...(bookingType === "対面" ? [`場所: ${location || "-"}`] : []),
-        ],
-        description: "予約内容を更新しました。確認メールをご確認ください。",
-        actionLabel: "専用ページに戻る",
-        action: "back",
+    setActionLoading("update")
+    try {
+      const response = await fetch(`/api/bookings/manage/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          password,
+          date: form.date,
+          timeSlot: form.timeSlot,
+          bookingType: record?.bookingType,
+          location: form.location,
+          company: form.company,
+          agenda: form.agenda,
+        }),
       })
-      setMessage("")
-      return
+      const json = await response.json()
+      if (response.ok && json.ok) {
+        const nextRecord = json.record as
+          | { booking_type?: "meet" | "対面"; date?: string; time_slot?: string; location?: string | null }
+          | undefined
+        const bookingType = nextRecord?.booking_type || record?.bookingType || "meet"
+        const date = nextRecord?.date || form.date
+        const timeSlot = nextRecord?.time_slot || form.timeSlot
+        const location = nextRecord?.location || form.location
+        setCompletion({
+          title: "予約変更完了",
+          detail: `${date} ${timeSlot}`,
+          infoLines: [
+            `日程: ${date}`,
+            `時間: ${timeSlot}`,
+            `形式: ${bookingType === "meet" ? "Google Meet" : "対面"}`,
+            ...(bookingType === "対面" ? [`場所: ${location || "-"}`] : []),
+          ],
+          description: "予約内容を更新しました。確認メールをご確認ください。",
+          actionLabel: "専用ページに戻る",
+          action: "back",
+        })
+        setMessage("")
+        return
+      }
+      setMessage([json.message, json.error].filter(Boolean).join("\n"))
+    } finally {
+      setActionLoading(null)
     }
-    setMessage([json.message, json.error].filter(Boolean).join("\n"))
   }
 
   const onCancel = async () => {
-    const response = await fetch(`/api/bookings/manage/${params.id}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, password }),
-    })
-    const json = await response.json()
-    if (response.ok && json.ok) {
-      const bookingType = record?.bookingType || "meet"
-      setCompletion({
-        title: "予約キャンセル完了",
-        detail: `${form.date} ${form.timeSlot}`,
-        infoLines: [
-          `日程: ${form.date}`,
-          `時間: ${form.timeSlot}`,
-          `形式: ${bookingType === "meet" ? "Google Meet" : "対面"}`,
-          ...(bookingType === "対面" ? [`場所: ${form.location || "-"}`] : []),
-        ],
-        description: "ご予約をキャンセルしました。確認メールをご確認ください。",
-        actionLabel: "ホームに戻る",
-        action: "home",
+    setActionLoading("cancel")
+    try {
+      const response = await fetch(`/api/bookings/manage/${params.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password }),
       })
-      setMessage("")
-      return
+      const json = await response.json()
+      if (response.ok && json.ok) {
+        const bookingType = record?.bookingType || "meet"
+        setCompletion({
+          title: "予約キャンセル完了",
+          detail: `${form.date} ${form.timeSlot}`,
+          infoLines: [
+            `日程: ${form.date}`,
+            `時間: ${form.timeSlot}`,
+            `形式: ${bookingType === "meet" ? "Google Meet" : "対面"}`,
+            ...(bookingType === "対面" ? [`場所: ${form.location || "-"}`] : []),
+          ],
+          description: "ご予約をキャンセルしました。確認メールをご確認ください。",
+          actionLabel: "ホームに戻る",
+          action: "home",
+        })
+        setMessage("")
+        return
+      }
+      setMessage([json.message, json.error].filter(Boolean).join("\n"))
+    } finally {
+      setActionLoading(null)
     }
-    setMessage([json.message, json.error].filter(Boolean).join("\n"))
   }
 
   if (completion) {
@@ -260,6 +271,18 @@ export default function ManageBookingPage() {
           setMessage("")
         }}
       />
+    )
+  }
+
+  if (actionLoading) {
+    return (
+      <main className="min-h-screen bg-background text-foreground">
+        <section className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-4 text-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
+          <h1 className="mt-6 text-3xl font-bold">{actionLoading === "update" ? "予約変更中..." : "キャンセル中..."}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">しばらくお待ちください。</p>
+        </section>
+      </main>
     )
   }
 
@@ -348,10 +371,10 @@ export default function ManageBookingPage() {
             </div>
 
             <div className="flex gap-3">
-              <Button onClick={onUpdate} disabled={!form.date || !form.timeSlot}>
+              <Button onClick={onUpdate} disabled={!form.date || !form.timeSlot || actionLoading !== null}>
                 予約を変更
               </Button>
-              <Button variant="destructive" onClick={onCancel}>
+              <Button variant="destructive" onClick={onCancel} disabled={actionLoading !== null}>
                 予約をキャンセル
               </Button>
             </div>
