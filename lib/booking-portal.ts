@@ -157,7 +157,12 @@ export async function setPortalPassword(id: string, token: string, password: str
 
 export async function updatePortalBooking(
   id: string,
-  patch: Partial<Pick<BookingPortalRecord, "date" | "time_slot" | "booking_type" | "location" | "agenda" | "company">>
+  patch: Partial<
+    Pick<
+      BookingPortalRecord,
+      "date" | "time_slot" | "booking_type" | "location" | "agenda" | "company" | "calendar_event_url" | "meet_url"
+    >
+  >
 ) {
   const response = await supabaseFetch(`booking_portal?id=eq.${encodeURIComponent(id)}`, {
     method: "PATCH",

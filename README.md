@@ -72,6 +72,10 @@ BOOKING_PORTAL_BASE_URL=https://your-domain.com
 - Endpoint:
   - `GET /api/bookings?date=YYYY-MM-DD`（空き時間照会）
   - `POST /api/bookings`（予約確定）
+  - `POST /api/bookings/manage/{id}/verify`（管理ページ認証）
+  - `POST /api/bookings/manage/{id}/password`（初回パスワード設定）
+  - `PATCH /api/bookings/manage/{id}`（予約変更）
+  - `DELETE /api/bookings/manage/{id}`（予約キャンセル）
 - Request:
 
 ```json
@@ -101,6 +105,7 @@ BOOKING_PORTAL_BASE_URL=https://your-domain.com
     - Resend 設定時は予約完了メールを送信
     - attendees招待を有効にするには、Google Workspace の Domain-Wide Delegation + `GOOGLE_DELEGATED_USER_EMAIL` が必要
   - Supabase設定済みの場合は、予約後に `managePortal.url`（予約者専用ページURL）を返却
+  - 予約者ページでの変更/キャンセルは、`gcp` モード時に Google Calendar イベントにも同期
 
 ## Supabaseテーブル（booking_portal）
 
