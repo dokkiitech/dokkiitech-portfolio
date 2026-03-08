@@ -8,7 +8,8 @@ export const metadata = {
 }
 
 export default async function ProductsPage() {
-  const articles = await getZennProductArticles("dokkiitech")
+  const username = process.env.NEXT_PUBLIC_ZENN_USERNAME || "dokkiitech"
+  const articles = await getZennProductArticles(username)
 
   return (
     <main className="min-h-screen">

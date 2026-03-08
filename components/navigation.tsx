@@ -8,12 +8,12 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { Menu, X } from "lucide-react"
 
 const navigation = [
-  { name: "Home", href: "/" },
-  { name: "About", href: "/about" },
-  { name: "Products", href: "/products" },
-  { name: "Blog", href: "/blog" },
-  { name: "Contact", href: "/contact" },
-  { name: "Appoint", href: "/appoint" },
+  { name: "ホーム", href: "/" },
+  { name: "プロフィール", href: "/profile" },
+  { name: "ブログ", href: "/blog" },
+  { name: "Product", href: "/products" },
+  { name: "SNS", href: "/contact" },
+  { name: "お打ち合わせの予約", href: "/appointment" },
 ]
 
 export function Navigation() {

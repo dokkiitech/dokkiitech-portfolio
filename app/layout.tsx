@@ -4,12 +4,14 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Navigation } from "@/components/navigation"
+import { FirstVisitLoader } from "@/components/first-visit-loader"
+import { CtrlCTerminalShortcut } from "@/components/ctrl-c-terminal-shortcut"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "DOKKIITECH",
-  description: "木戸亮輔のポートフォリオサイトです。私のプロダクト情報やSNSアカウントの紹介など木戸亮輔についての全ての情報が手に入ります。",
+  description: "木戸亮輔(dokkiitech)のポートフォリオサイトです。ターミナルUIを採用した楽しいポートフォリオを皆様に提供しています。木戸亮輔について知れることはもちろん、お打ち合わせのご予約もこちらから行なっていただけます。",
   manifest: '/site.webmanifest',
   icons: {
     icon: [
@@ -44,7 +46,9 @@ export default function RootLayout({
   return (
     <html lang="ja" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange storageKey="dokkiitech-theme">
+          <FirstVisitLoader />
+          <CtrlCTerminalShortcut />
           <Navigation />
           <div className="pt-16">{children}</div>
         </ThemeProvider>
