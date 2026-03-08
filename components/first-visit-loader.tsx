@@ -8,6 +8,18 @@ export function FirstVisitLoader() {
   const [show, setShow] = useState(false)
   const [closing, setClosing] = useState(false)
   const [visibleCount, setVisibleCount] = useState(1)
+  const logo = useMemo(
+    () =>
+      [
+        "██████╗  ██████╗ ██╗  ██╗██╗  ██╗██╗██╗████████╗███████╗ ██████╗██╗  ██╗",
+        "██╔══██╗██╔═══██╗██║ ██╔╝██║ ██╔╝██║██║╚══██╔══╝██╔════╝██╔════╝██║  ██║",
+        "██║  ██║██║   ██║█████╔╝ █████╔╝ ██║██║   ██║   █████╗  ██║     ███████║",
+        "██║  ██║██║   ██║██╔═██╗ ██╔═██╗ ██║██║   ██║   ██╔══╝  ██║     ██╔══██║",
+        "██████╔╝╚██████╔╝██║  ██╗██║  ██╗██║██║   ██║   ███████╗╚██████╗██║  ██║",
+        "╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝",
+      ].join("\n"),
+    []
+  )
 
   const logs = useMemo(
     () => [
@@ -75,6 +87,9 @@ export function FirstVisitLoader() {
         <span className="h-3 w-3 rounded-full bg-yellow-400" />
         <span className="h-3 w-3 rounded-full bg-green-400" />
       </div>
+      <pre className="mb-5 overflow-x-auto border border-emerald-400/30 bg-emerald-400/5 p-3 text-[9px] leading-tight text-emerald-300 md:text-xs">
+        {logo}
+      </pre>
       <div className="space-y-1">
         {logs.slice(0, visibleCount).map((line, idx) => (
           <p key={`${line}-${idx}`} className="whitespace-pre-wrap break-words">
