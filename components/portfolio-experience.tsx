@@ -326,6 +326,12 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
                   value={command}
                   onChange={(e) => setCommand(e.target.value)}
                   onKeyDown={(e) => {
+                    if (e.ctrlKey && e.key.toLowerCase() === "l") {
+                      e.preventDefault()
+                      setHistory([])
+                      setCommand("")
+                      return
+                    }
                     if (e.key === "Enter") {
                       void execute()
                       return
