@@ -520,7 +520,7 @@ export async function POST(request: Request) {
     const manageUrl = portal ? buildManageUrl(portal.id, portal.token) : ""
     const dateJp = formatDateJp(payload.date)
     const endTime = calcEndTime(payload.timeSlot)
-    const salutation = `${payload.company ? `${payload.company} ` : ""}${payload.name} さま`
+    const salutation = `${payload.company ? `${payload.company} ` : ""}${payload.name}さま`
     const formatLine = payload.bookingType === "meet" ? "Google Meet" : `対面（${payload.location || "-"})`
     const mailResult = await sendResendMail(
       payload.email,

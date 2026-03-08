@@ -291,7 +291,7 @@ export async function PATCH(
       checked.record.email,
       "予約変更のお知らせ",
       `
-      <p>${checked.record.name} 様</p>
+      <p>${checked.record.name}様</p>
       <p>予約内容が変更されました。</p>
       <ul>
         <li>日付: ${nextDate}</li>
@@ -357,7 +357,7 @@ export async function DELETE(
       checked.record.email,
       "予約キャンセルのお知らせ",
       `
-      <p>${checked.record.name} 様</p>
+      <p>${checked.record.name}様</p>
       <p>以下の予約はキャンセルされました。</p>
       <ul>
         <li>日付: ${checked.record.date}</li>
