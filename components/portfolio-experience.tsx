@@ -222,7 +222,8 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
                 </p>
               ))}
               <label className="flex items-center gap-2 text-emerald-600 dark:text-emerald-300">
-                <span>{prompt}</span>
+                <span className="hidden sm:inline">{prompt}</span>
+                <span className="sm:hidden">$</span>
                 <input
                   ref={terminalInputRef}
                   value={command}
@@ -233,7 +234,7 @@ export function PortfolioExperience({ blogArticles, productArticles }: Portfolio
                     }
                   }}
                   className="w-full bg-transparent text-base text-foreground outline-none md:text-sm"
-                  placeholder={isTyping ? "出力中..." : "コマンドを入力 (例: cd blog)"}
+                  placeholder={isTyping ? "出力中..." : "例: cd /blog"}
                 />
               </label>
             </div>
