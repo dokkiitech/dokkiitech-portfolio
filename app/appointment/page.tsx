@@ -166,7 +166,7 @@ export default function AppointPage() {
       <section className="mx-auto max-w-4xl px-4 py-24">
         <h1 className="text-3xl font-bold">予約ページ</h1>
         <p className="mt-2 text-muted-foreground">
-          1か月カレンダーから日付を選択すると、当日の空き時間帯を表示します。現時点では API モックで受け付けます。
+          1か月カレンダーから日付を選択すると、当日の空き時間帯を表示します。
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5 rounded-xl border border-border bg-card p-6">
