@@ -169,115 +169,129 @@ export default function AppointPage() {
           1か月カレンダーから日付を選択すると、当日の空き時間帯を表示します。
         </p>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5 rounded-xl border border-border bg-card p-6">
-          <div className="grid gap-5 md:grid-cols-2">
-            <div>
-              <Label htmlFor="name">お名前</Label>
-              <Input id="name" {...register("name")} className="mt-2" />
-              {errors.name && <p className="mt-1 text-sm text-red-300">{errors.name.message}</p>}
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="relative mt-8 space-y-5 rounded-xl border border-border bg-card p-6"
+          aria-busy={submitting}
+        >
+          <fieldset disabled={submitting} className="space-y-5 disabled:opacity-80">
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <Label htmlFor="name">お名前</Label>
+                <Input id="name" {...register("name")} className="mt-2" />
+                {errors.name && <p className="mt-1 text-sm text-red-300">{errors.name.message}</p>}
+              </div>
+
+              <div>
+                <Label htmlFor="email">メールアドレス</Label>
+                <Input id="email" type="email" {...register("email")} className="mt-2" />
+                {errors.email && <p className="mt-1 text-sm text-red-300">{errors.email.message}</p>}
+              </div>
             </div>
 
             <div>
-              <Label htmlFor="email">メールアドレス</Label>
-              <Input id="email" type="email" {...register("email")} className="mt-2" />
-              {errors.email && <p className="mt-1 text-sm text-red-300">{errors.email.message}</p>}
+              <Label htmlFor="company">会社名（任意）</Label>
+              <Input id="company" {...register("company")} className="mt-2" />
             </div>
-          </div>
 
-          <div>
-            <Label htmlFor="company">会社名（任意）</Label>
-            <Input id="company" {...register("company")} className="mt-2" />
-          </div>
-
-          <div>
-            <Label>予約タイプ</Label>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <label className="flex cursor-pointer items-center gap-2 rounded-md border border-border p-3">
-                <input type="radio" value="meet" {...register("bookingType")} />
-                <span>meet</span>
-              </label>
-              <label className="flex cursor-pointer items-center gap-2 rounded-md border border-border p-3">
-                <input type="radio" value="対面" {...register("bookingType")} />
-                <span>対面</span>
-              </label>
-            </div>
-            {errors.bookingType && <p className="mt-1 text-sm text-red-300">{errors.bookingType.message}</p>}
-          </div>
-
-          {showLocation && (
             <div>
-              <Label htmlFor="location">場所（対面必須）</Label>
-              <Input id="location" placeholder="例: 渋谷駅周辺 / 御社オフィス" {...register("location")} className="mt-2" />
-              {errors.location && <p className="mt-1 text-sm text-red-300">{errors.location.message}</p>}
+              <Label>予約タイプ</Label>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <label className="flex cursor-pointer items-center gap-2 rounded-md border border-border p-3">
+                  <input type="radio" value="meet" {...register("bookingType")} />
+                  <span>meet</span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 rounded-md border border-border p-3">
+                  <input type="radio" value="対面" {...register("bookingType")} />
+                  <span>対面</span>
+                </label>
+              </div>
+              {errors.bookingType && <p className="mt-1 text-sm text-red-300">{errors.bookingType.message}</p>}
+            </div>
+
+            {showLocation && (
+              <div>
+                <Label htmlFor="location">場所（対面必須）</Label>
+                <Input id="location" placeholder="例: 渋谷駅周辺 / 御社オフィス" {...register("location")} className="mt-2" />
+                {errors.location && <p className="mt-1 text-sm text-red-300">{errors.location.message}</p>}
+              </div>
+            )}
+
+            <div className="grid gap-5 lg:grid-cols-2">
+              <div className="rounded-lg border border-border p-3">
+                <Label>日付選択（1か月）</Label>
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  month={calendarMonth}
+                  onMonthChange={setCalendarMonth}
+                  onSelect={(date) => {
+                    setSelectedDate(date)
+                    setValue("timeSlot", "")
+                    setValue("date", date ? format(date, "yyyy-MM-dd") : "")
+                  }}
+                  locale={ja}
+                  disabled={(date) => {
+                    const today = new Date(new Date().setHours(0, 0, 0, 0))
+                    if (date < today) return true
+                    const key = format(date, "yyyy-MM-dd")
+                    return disabledDateKeys.has(key)
+                  }}
+                  className="mt-2"
+                />
+                <input type="hidden" {...register("date")} />
+                {errors.date && <p className="mt-1 text-sm text-red-300">{errors.date.message}</p>}
+              </div>
+
+              <div className="rounded-lg border border-border p-3">
+                <Label>空き時間帯</Label>
+                {selectedDate ? (
+                  <>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {format(selectedDate, "yyyy年MM月dd日(E)", { locale: ja })} の空き枠
+                    </p>
+                    {loadingSlots ? (
+                      <p className="mt-3 text-sm text-muted-foreground">空き時間を照会中...</p>
+                    ) : availableSlots.length > 0 ? (
+                      <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
+                        {availableSlots.map((slot) => (
+                          <label key={slot} className="flex cursor-pointer items-center gap-2 rounded-md border border-border p-2">
+                            <input type="radio" value={slot} {...register("timeSlot")} />
+                            <span>{formatSlotRange(slot)}</span>
+                          </label>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-sm text-amber-300">この日は空き時間がありません。</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-muted-foreground">先に日付を選択してください。</p>
+                )}
+                {errors.timeSlot && <p className="mt-2 text-sm text-red-300">{errors.timeSlot.message}</p>}
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="agenda">相談内容</Label>
+              <Textarea id="agenda" rows={5} {...register("agenda")} className="mt-2" />
+              {errors.agenda && <p className="mt-1 text-sm text-red-300">{errors.agenda.message}</p>}
+            </div>
+
+            <Button type="submit" disabled={submitting} className="w-full">
+              {submitting ? "送信中..." : "予約リクエストを送信"}
+            </Button>
+
+            {serverMessage && <p className="rounded-md bg-muted p-3 text-sm whitespace-pre-wrap">{serverMessage}</p>}
+          </fieldset>
+
+          {submitting && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-xl bg-background/75 backdrop-blur-[1px]">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
+              <p className="mt-4 text-base font-semibold">予約を送信中です...</p>
+              <p className="mt-1 text-sm text-muted-foreground">このまましばらくお待ちください。</p>
             </div>
           )}
-
-          <div className="grid gap-5 lg:grid-cols-2">
-            <div className="rounded-lg border border-border p-3">
-              <Label>日付選択（1か月）</Label>
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                month={calendarMonth}
-                onMonthChange={setCalendarMonth}
-                onSelect={(date) => {
-                  setSelectedDate(date)
-                  setValue("timeSlot", "")
-                  setValue("date", date ? format(date, "yyyy-MM-dd") : "")
-                }}
-                locale={ja}
-                disabled={(date) => {
-                  const today = new Date(new Date().setHours(0, 0, 0, 0))
-                  if (date < today) return true
-                  const key = format(date, "yyyy-MM-dd")
-                  return disabledDateKeys.has(key)
-                }}
-                className="mt-2"
-              />
-              <input type="hidden" {...register("date")} />
-              {errors.date && <p className="mt-1 text-sm text-red-300">{errors.date.message}</p>}
-            </div>
-
-            <div className="rounded-lg border border-border p-3">
-              <Label>空き時間帯</Label>
-              {selectedDate ? (
-                <>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {format(selectedDate, "yyyy年MM月dd日(E)", { locale: ja })} の空き枠
-                  </p>
-                  {loadingSlots ? (
-                    <p className="mt-3 text-sm text-muted-foreground">空き時間を照会中...</p>
-                  ) : availableSlots.length > 0 ? (
-                    <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
-                      {availableSlots.map((slot) => (
-                        <label key={slot} className="flex cursor-pointer items-center gap-2 rounded-md border border-border p-2">
-                          <input type="radio" value={slot} {...register("timeSlot")} />
-                          <span>{formatSlotRange(slot)}</span>
-                        </label>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mt-3 text-sm text-amber-300">この日は空き時間がありません。</p>
-                  )}
-                </>
-              ) : (
-                <p className="mt-2 text-sm text-muted-foreground">先に日付を選択してください。</p>
-              )}
-              {errors.timeSlot && <p className="mt-2 text-sm text-red-300">{errors.timeSlot.message}</p>}
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="agenda">相談内容</Label>
-            <Textarea id="agenda" rows={5} {...register("agenda")} className="mt-2" />
-            {errors.agenda && <p className="mt-1 text-sm text-red-300">{errors.agenda.message}</p>}
-          </div>
-
-          <Button type="submit" disabled={submitting} className="w-full">
-            {submitting ? "送信中..." : "予約リクエストを送信"}
-          </Button>
-
-          {serverMessage && <p className="rounded-md bg-muted p-3 text-sm whitespace-pre-wrap">{serverMessage}</p>}
         </form>
       </section>
     </main>
