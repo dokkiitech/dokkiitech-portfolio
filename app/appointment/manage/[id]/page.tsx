@@ -83,6 +83,21 @@ export default function ManageBookingPage() {
 
   const showLocation = useMemo(() => record?.bookingType === "対面", [record?.bookingType])
 
+  const syncManageRecord = async (nextRecord: ManageRecord) => {
+    setRecord(nextRecord)
+    setSelectedDate(new Date(`${nextRecord.date}T00:00:00+09:00`))
+    setForm({
+      date: nextRecord.date,
+      timeSlot: nextRecord.timeSlot,
+      location: nextRecord.location || "",
+      company: nextRecord.company || "",
+      agenda: nextRecord.agenda,
+    })
+    await loadAvailability(nextRecord.date, nextRecord.timeSlot)
+    setStep("manage")
+    setMessage("")
+  }
+
   const verify = async (inputPassword?: string) => {
     const response = await fetch(`/api/bookings/manage/${params.id}/verify`, {
       method: "POST",
@@ -151,18 +166,17 @@ export default function ManageBookingPage() {
       return
     }
 
-    setRecord(checked.record)
-    setSelectedDate(new Date(`${checked.record.date}T00:00:00+09:00`))
-    setForm({
-      date: checked.record.date,
-      timeSlot: checked.record.timeSlot,
-      location: checked.record.location || "",
-      company: checked.record.company || "",
-      agenda: checked.record.agenda,
-    })
-    await loadAvailability(checked.record.date, checked.record.timeSlot)
-    setStep("manage")
-    setMessage("")
+    await syncManageRecord(checked.record)
+  }
+
+  const refreshAfterUpdate = async () => {
+    const checked = await verify(password)
+    if (!checked.ok || !checked.record) {
+      setMessage(checked.message || "最新の予約情報の取得に失敗しました。再ログインしてください。")
+      setStep("login")
+      return
+    }
+    await syncManageRecord(checked.record)
   }
 
   const onSetPassword = async () => {
@@ -274,8 +288,10 @@ export default function ManageBookingPage() {
             router.push("/")
             return
           }
-          setCompletion(null)
-          setMessage("")
+          void (async () => {
+            setCompletion(null)
+            await refreshAfterUpdate()
+          })()
         }}
       />
     )
@@ -354,7 +370,7 @@ export default function ManageBookingPage() {
             </div>
 
             <div className="rounded-xl border border-border bg-card px-4">
-              <Accordion type="single" collapsible defaultValue="manage-form">
+              <Accordion type="single" collapsible>
                 <AccordionItem value="manage-form" className="border-none">
                   <AccordionTrigger className="text-base hover:no-underline">変更やキャンセルはこちら</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-1">
