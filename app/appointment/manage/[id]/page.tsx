@@ -93,7 +93,7 @@ export default function ManageBookingPage() {
       company: nextRecord.company || "",
       agenda: nextRecord.agenda,
     })
-    await loadAvailability(nextRecord.date, nextRecord.timeSlot)
+    await loadAvailability(nextRecord.date)
     setStep("manage")
     setMessage("")
   }
@@ -133,7 +133,7 @@ export default function ManageBookingPage() {
     bootstrap()
   }, [token, params.id])
 
-  const loadAvailability = async (dateStr: string, currentTimeSlot?: string) => {
+  const loadAvailability = async (dateStr: string) => {
     setLoadingSlots(true)
     try {
       const response = await fetch(`/api/bookings?date=${dateStr}&bookingType=${encodeURIComponent(record?.bookingType || "meet")}`)
@@ -141,12 +141,10 @@ export default function ManageBookingPage() {
       const fromApi = response.ok && json.ok && Array.isArray(json.slots)
         ? (json.slots as string[])
         : buildFallbackSlots(dateStr, record?.bookingType || "meet")
-      const merged = currentTimeSlot && !fromApi.includes(currentTimeSlot) ? [currentTimeSlot, ...fromApi] : fromApi
-      setAvailableSlots(Array.from(new Set(merged)))
+      setAvailableSlots(Array.from(new Set(fromApi)))
     } catch {
       const fallback = buildFallbackSlots(dateStr, record?.bookingType || "meet")
-      const merged = currentTimeSlot && !fallback.includes(currentTimeSlot) ? [currentTimeSlot, ...fallback] : fallback
-      setAvailableSlots(Array.from(new Set(merged)))
+      setAvailableSlots(Array.from(new Set(fallback)))
     } finally {
       setLoadingSlots(false)
     }
@@ -156,7 +154,7 @@ export default function ManageBookingPage() {
     if (!selectedDate || step !== "manage") return
     const dateStr = format(selectedDate, "yyyy-MM-dd")
     setForm((prev) => ({ ...prev, date: dateStr, timeSlot: "" }))
-    void loadAvailability(dateStr, record?.timeSlot)
+    void loadAvailability(dateStr)
   }, [selectedDate, step, record?.timeSlot])
 
   const onLogin = async () => {

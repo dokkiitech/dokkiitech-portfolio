@@ -217,6 +217,13 @@ export async function PATCH(
     const nextAgenda = body.agenda ? String(body.agenda) : checked.record.agenda
     const nextCompany = body.company !== undefined ? String(body.company || "") : checked.record.company
 
+    if (nextDate === checked.record.date && nextTimeSlot === checked.record.time_slot) {
+      return NextResponse.json(
+        { ok: false, message: "現在と同じ日時には変更できません。別の時間を選択してください。" },
+        { status: 400 }
+      )
+    }
+
     if (isPastSlot(nextDate, nextTimeSlot)) {
       return NextResponse.json(
         { ok: false, message: "過去の時間帯は予約できません。未来の時間を選択してください。" },
