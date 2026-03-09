@@ -57,19 +57,9 @@ export function Navigation() {
                 size="icon"
                 className="md:hidden rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20 transition-all duration-300 hover:scale-105"
                 onClick={() => setIsOpen(!isOpen)}
+                aria-label={isOpen ? "メニューを閉じる" : "メニューを開く"}
               >
-                <div className="relative w-5 h-5">
-                  <Menu
-                    className={`w-5 h-5 absolute transition-all duration-300 ${
-                      isOpen ? "rotate-90 opacity-0" : "rotate-0 opacity-100"
-                    }`}
-                  />
-                  <X
-                    className={`w-5 h-5 absolute transition-all duration-300 ${
-                      isOpen ? "rotate-0 opacity-100" : "-rotate-90 opacity-0"
-                    }`}
-                  />
-                </div>
+                {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
             </div>
           </div>

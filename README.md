@@ -109,7 +109,7 @@ BOOKING_PORTAL_BASE_URL=https://your-domain.com
     - Resend 設定時は予約完了メールを送信
     - attendees招待を有効にするには、Google Workspace の Domain-Wide Delegation + `GOOGLE_DELEGATED_USER_EMAIL` が必要
   - Supabase設定済みの場合は、予約後に `managePortal.url`（予約者専用ページURL）を返却
-  - Resendメール本文に `managePortal.url` と初期パスワードを同梱
+  - Resendメール本文に `managePortal.url` とパスワードを同梱
   - 予約者ページでの変更/キャンセルは、`gcp` モード時に Google Calendar イベントにも同期
 
 ## Supabaseテーブル（booking_portal）

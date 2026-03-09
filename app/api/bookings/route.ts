@@ -248,6 +248,15 @@ async function listAvailableSlots(accessToken: string, calendarId: string, date:
   })
 }
 
+const MAIL_COMMON_FOOTER_HTML = `
+<hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb;" />
+<p style="color:#4b5563;font-size:13px;line-height:1.7;">
+このメールアドレスは送信専用です。<br />
+メールでのご連絡はinfo&#64;dokkiitech.comにお願いします<br />
+SNSでのご連絡は <a href="https://www.dokkiitech.com/contact">https://www.dokkiitech.com/contact</a> からお願いします。
+</p>
+`
+
 async function sendResendMail(to: string, subject: string, html: string) {
   const apiKey = process.env.RESEND_API_KEY
   const from = process.env.RESEND_FROM
@@ -264,7 +273,7 @@ async function sendResendMail(to: string, subject: string, html: string) {
       from: fromHeader,
       to: [to],
       subject,
-      html,
+      html: `${html}${MAIL_COMMON_FOOTER_HTML}`,
     }),
   })
 
@@ -537,7 +546,7 @@ export async function POST(request: Request) {
       ${
         portal
           ? `<p><strong>予約者専用ページ:</strong> <a href="${manageUrl}">${manageUrl}</a></p>
-             <p><strong>初期パスワード:</strong> ${portal.initialPassword}</p>`
+             <p><strong>パスワード:</strong> ${portal.initialPassword}</p>`
           : "<p>予約者専用ページは現在利用できません。</p>"
       }
       <p>Googleカレンダーへの招待メールも別途送付されますのでご確認ください</p>
