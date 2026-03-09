@@ -546,7 +546,7 @@ export async function POST(request: Request) {
       ${
         portal
           ? `<p><strong>予約者専用ページ:</strong> <a href="${manageUrl}">${manageUrl}</a></p>
-             <p><strong>初期パスワード:</strong> ${portal.initialPassword}</p>`
+             <p><strong>パスワード:</strong> ${portal.initialPassword}</p>`
           : "<p>予約者専用ページは現在利用できません。</p>"
       }
       <p>Googleカレンダーへの招待メールも別途送付されますのでご確認ください</p>
