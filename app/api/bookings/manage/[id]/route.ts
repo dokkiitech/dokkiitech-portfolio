@@ -153,11 +153,21 @@ SNSでのご連絡は <a href="https://www.dokkiitech.com/contact">https://www.d
 </p>
 `
 
-async function sendResendMail(to: string, subject: string, html: string, senderName = "dokkiitech予約管理システム") {
+const UPDATE_FROM_ADDRESS = "reappointment@dokkiitech.dev"
+const CANCEL_FROM_ADDRESS = "unappointment@dokkiitech.dev"
+
+async function sendResendMail(
+  to: string,
+  subject: string,
+  html: string,
+  senderName = "dokkiitech予約管理システム",
+  fromAddressOverride?: string
+) {
   const apiKey = process.env.RESEND_API_KEY
   const from = process.env.RESEND_FROM
   if (!apiKey || !from) return { sent: false, reason: "RESEND_API_KEY or RESEND_FROM missing" }
-  const fromAddress = from.includes("<") ? from.match(/<([^>]+)>/)?.[1] || from : from
+  const defaultFromAddress = from.includes("<") ? from.match(/<([^>]+)>/)?.[1] || from : from
+  const fromAddress = fromAddressOverride || defaultFromAddress
   const fromHeader = `${senderName} <${fromAddress}>`
 
   const response = await fetch("https://api.resend.com/emails", {
@@ -216,6 +226,13 @@ export async function PATCH(
     const nextLocation = body.location !== undefined ? String(body.location || "") : checked.record.location
     const nextAgenda = body.agenda ? String(body.agenda) : checked.record.agenda
     const nextCompany = body.company !== undefined ? String(body.company || "") : checked.record.company
+
+    if (nextDate === checked.record.date && nextTimeSlot === checked.record.time_slot) {
+      return NextResponse.json(
+        { ok: false, message: "現在と同じ日時には変更できません。別の時間を選択してください。" },
+        { status: 400 }
+      )
+    }
 
     if (isPastSlot(nextDate, nextTimeSlot)) {
       return NextResponse.json(
@@ -327,7 +344,8 @@ export async function PATCH(
       </ul>
       <p>Googleカレンダーの予定にも変更内容が反映されます。</p>
       `,
-      "dokkiitech予約管理システム予約変更センター"
+      "dokkiitech予約管理システム予約変更センター",
+      UPDATE_FROM_ADDRESS
     )
 
     return NextResponse.json({
@@ -400,7 +418,8 @@ export async function DELETE(
       </ul>
       <p>Googleカレンダーの予定もキャンセルされます。</p>
       `,
-      "dokkiitech予約管理システムキャンセル承りセンター"
+      "dokkiitech予約管理システムキャンセル承りセンター",
+      CANCEL_FROM_ADDRESS
     )
     return NextResponse.json({
       ok: true,
