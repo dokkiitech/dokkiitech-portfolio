@@ -2,6 +2,7 @@ import { createSign } from "crypto"
 import { NextResponse } from "next/server"
 import { bookingSchema } from "@/lib/booking"
 import { createBookingPortal } from "@/lib/booking-portal"
+import { sendBookingWebhookNotificationSafely } from "@/lib/booking-discord-webhook"
 
 export const runtime = "nodejs"
 
@@ -391,11 +392,12 @@ export async function POST(request: Request) {
     }
 
     if (mode === "mock") {
+      const bookingId = `mock_${Date.now()}`
       let portal: { id: string; token: string; expiresAt: string; initialPassword: string } | null = null
       let portalError: string | null = null
       try {
         portal = await createBookingPortal({
-          bookingId: `mock_${Date.now()}`,
+          bookingId,
           name: payload.name,
           email: payload.email,
           company: payload.company,
@@ -409,11 +411,19 @@ export async function POST(request: Request) {
         console.error("Failed to create booking portal (mock):", error)
         portalError = String(error)
       }
+      await sendBookingWebhookNotificationSafely({
+        event: "created",
+        reserverName: payload.name,
+        date: payload.date,
+        timeSlot: payload.timeSlot,
+        bookingType: payload.bookingType,
+        location: payload.location,
+      })
 
       return NextResponse.json({
         ok: true,
         mode,
-        bookingId: `mock_${Date.now()}`,
+        bookingId,
         message: "予約リクエストを受け付けました（モック処理）。",
         request: payload,
         contract: {
@@ -553,6 +563,14 @@ export async function POST(request: Request) {
       <p>当日はどうぞよろしくお願い致します。</p>
       `
     )
+    await sendBookingWebhookNotificationSafely({
+      event: "created",
+      reserverName: payload.name,
+      date: payload.date,
+      timeSlot: payload.timeSlot,
+      bookingType: payload.bookingType,
+      location: payload.location,
+    })
 
     return NextResponse.json({
       ok: true,

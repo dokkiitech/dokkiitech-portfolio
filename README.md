@@ -57,6 +57,10 @@ BOOKING_SLOT_END_HOUR=24
 RESEND_API_KEY=
 RESEND_FROM=booking@your-domain.com
 
+# Discord Webhook（予約通知）
+# 未設定時は通知をスキップ（アプリ処理は継続）
+WEBHOOK_URL=
+
 # 予約者専用ページ（Supabase）
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
@@ -111,6 +115,14 @@ BOOKING_PORTAL_BASE_URL=https://your-domain.com
   - Supabase設定済みの場合は、予約後に `managePortal.url`（予約者専用ページURL）を返却
   - Resendメール本文に `managePortal.url` とパスワードを同梱
   - 予約者ページでの変更/キャンセルは、`gcp` モード時に Google Calendar イベントにも同期
+  - Discord Webhook（`WEBHOOK_URL`）設定時は、予約作成/更新/キャンセルを日本語で通知
+  - Webhook送信に失敗しても、予約の主処理はロールバックしない
+
+## Discord通知の個人情報方針
+
+- 通知payloadに含める情報は最小限: `event種別` / `予約者名` / `日時` / `方式(meet/対面)` / `対面場所(必要時のみ)`
+- 予約者名はマスクして送信（例: `山田太郎` → `山**郎`）
+- メールアドレス・電話番号・相談内容などは通知payloadに含めない
 
 ## Supabaseテーブル（booking_portal）
 

@@ -1,6 +1,7 @@
 import { createSign } from "crypto"
 import { NextResponse } from "next/server"
 import { cancelPortalBooking, updatePortalBooking, verifyPortalAccess } from "@/lib/booking-portal"
+import { sendBookingWebhookNotificationSafely } from "@/lib/booking-discord-webhook"
 
 const DEFAULT_TIMEZONE = process.env.BOOKING_TIMEZONE || "Asia/Tokyo"
 const DEFAULT_OFFSET = process.env.BOOKING_TIMEZONE_OFFSET || "+09:00"
@@ -347,6 +348,14 @@ export async function PATCH(
       "dokkiitech予約管理システム予約変更センター",
       UPDATE_FROM_ADDRESS
     )
+    await sendBookingWebhookNotificationSafely({
+      event: "updated",
+      reserverName: checked.record.name,
+      date: nextDate,
+      timeSlot: nextTimeSlot,
+      bookingType: nextBookingType,
+      location: nextLocation,
+    })
 
     return NextResponse.json({
       ok: true,
@@ -421,6 +430,14 @@ export async function DELETE(
       "dokkiitech予約管理システムキャンセル承りセンター",
       CANCEL_FROM_ADDRESS
     )
+    await sendBookingWebhookNotificationSafely({
+      event: "canceled",
+      reserverName: checked.record.name,
+      date: checked.record.date,
+      timeSlot: checked.record.time_slot,
+      bookingType: checked.record.booking_type,
+      location: checked.record.location,
+    })
     return NextResponse.json({
       ok: true,
       message: "予約をキャンセルしました。",
