@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 import { BookingCompletionScreen } from "@/components/booking-completion-screen"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 interface ManageRecord {
   id: string
@@ -41,6 +42,12 @@ function buildFallbackSlots(date: string, bookingType: "meet" | "対面"): strin
     const slotStart = new Date(`${date}T${slot}:00+09:00`)
     return slotStart.getTime() > threshold
   })
+}
+
+function formatBookingDate(date: string): string {
+  const parsed = new Date(`${date}T00:00:00+09:00`)
+  if (Number.isNaN(parsed.getTime())) return date
+  return format(parsed, "yyyy年M月d日(E)", { locale: ja })
 }
 
 export default function ManageBookingPage() {
@@ -311,72 +318,108 @@ export default function ManageBookingPage() {
         )}
 
         {step === "manage" && record && (
-          <div className="mt-8 space-y-4 rounded-xl border border-border bg-card p-6">
-            <p className="text-sm text-muted-foreground">対象: {record.name} / {record.email}</p>
+          <div className="mt-8 space-y-6">
+            <div className="space-y-4 rounded-xl border border-border bg-card p-6">
+              <h2 className="text-xl font-semibold">現在の予約状況</h2>
+              <p className="text-sm text-muted-foreground">対象: {record.name} / {record.email}</p>
 
-            <div>
-              <Label>予約タイプ（変更不可）</Label>
-              <Input value={record.bookingType} readOnly />
-            </div>
-
-            <div className="rounded-lg border border-border p-3">
-              <Label>日付選択</Label>
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                locale={ja}
-                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                className="mt-2"
-              />
-            </div>
-
-            <div className="rounded-lg border border-border p-3">
-              <Label>時間帯選択</Label>
-              {loadingSlots ? (
-                <p className="mt-2 text-sm text-muted-foreground">空き時間を照会中...</p>
-              ) : availableSlots.length > 0 ? (
-                <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
-                  {availableSlots.map((slot) => (
-                    <label key={slot} className="flex cursor-pointer items-center gap-2 rounded-md border border-border p-2">
-                      <input
-                        type="radio"
-                        name="manage-time-slot"
-                        checked={form.timeSlot === slot}
-                        onChange={() => setForm((prev) => ({ ...prev, timeSlot: slot }))}
-                      />
-                      <span>{formatSlotRange(slot)}</span>
-                    </label>
-                  ))}
+              <div className="grid gap-3 text-sm sm:grid-cols-2">
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-xs text-muted-foreground">予約ステータス</p>
+                  <p className="mt-1 font-medium">{record.status === "active" ? "予約中" : record.status}</p>
                 </div>
-              ) : (
-                <p className="mt-2 text-sm text-muted-foreground">選択日の空き時間がありません。</p>
-              )}
-            </div>
-
-            {showLocation && (
-              <div>
-                <Label>場所（対面時）</Label>
-                <Input value={form.location} onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))} />
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-xs text-muted-foreground">予約タイプ</p>
+                  <p className="mt-1 font-medium">{record.bookingType === "meet" ? "Google Meet" : "対面"}</p>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-xs text-muted-foreground">日程</p>
+                  <p className="mt-1 font-medium">{formatBookingDate(record.date)}</p>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-xs text-muted-foreground">時間</p>
+                  <p className="mt-1 font-medium">{formatSlotRange(record.timeSlot)}</p>
+                </div>
+                {record.bookingType === "対面" && (
+                  <div className="rounded-lg border border-border p-3 sm:col-span-2">
+                    <p className="text-xs text-muted-foreground">場所</p>
+                    <p className="mt-1 font-medium">{record.location || "-"}</p>
+                  </div>
+                )}
+                <div className="rounded-lg border border-border p-3 sm:col-span-2">
+                  <p className="text-xs text-muted-foreground">相談内容</p>
+                  <p className="mt-1 whitespace-pre-wrap font-medium">{record.agenda}</p>
+                </div>
               </div>
-            )}
-
-            <div>
-              <Label>会社名（任意）</Label>
-              <Input value={form.company} onChange={(e) => setForm((prev) => ({ ...prev, company: e.target.value }))} />
-            </div>
-            <div>
-              <Label>相談内容</Label>
-              <Textarea value={form.agenda} onChange={(e) => setForm((prev) => ({ ...prev, agenda: e.target.value }))} />
             </div>
 
-            <div className="flex gap-3">
-              <Button onClick={onUpdate} disabled={!form.date || !form.timeSlot || actionLoading !== null}>
-                予約を変更
-              </Button>
-              <Button variant="destructive" onClick={onCancel} disabled={actionLoading !== null}>
-                予約をキャンセル
-              </Button>
+            <div className="rounded-xl border border-border bg-card px-4">
+              <Accordion type="single" collapsible defaultValue="manage-form">
+                <AccordionItem value="manage-form" className="border-none">
+                  <AccordionTrigger className="text-base hover:no-underline">変更やキャンセルはこちら</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-1">
+                    <div className="rounded-lg border border-border p-3">
+                      <Label>日付選択</Label>
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={setSelectedDate}
+                        locale={ja}
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        className="mt-2"
+                      />
+                    </div>
+
+                    <div className="rounded-lg border border-border p-3">
+                      <Label>時間帯選択</Label>
+                      {loadingSlots ? (
+                        <p className="mt-2 text-sm text-muted-foreground">空き時間を照会中...</p>
+                      ) : availableSlots.length > 0 ? (
+                        <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
+                          {availableSlots.map((slot) => (
+                            <label key={slot} className="flex cursor-pointer items-center gap-2 rounded-md border border-border p-2">
+                              <input
+                                type="radio"
+                                name="manage-time-slot"
+                                checked={form.timeSlot === slot}
+                                onChange={() => setForm((prev) => ({ ...prev, timeSlot: slot }))}
+                              />
+                              <span>{formatSlotRange(slot)}</span>
+                            </label>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-sm text-muted-foreground">選択日の空き時間がありません。</p>
+                      )}
+                    </div>
+
+                    {showLocation && (
+                      <div>
+                        <Label>場所（対面時）</Label>
+                        <Input value={form.location} onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))} />
+                      </div>
+                    )}
+
+                    <div>
+                      <Label>会社名（任意）</Label>
+                      <Input value={form.company} onChange={(e) => setForm((prev) => ({ ...prev, company: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label>相談内容</Label>
+                      <Textarea value={form.agenda} onChange={(e) => setForm((prev) => ({ ...prev, agenda: e.target.value }))} />
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Button onClick={onUpdate} disabled={!form.date || !form.timeSlot || actionLoading !== null}>
+                        予約を変更
+                      </Button>
+                      <Button variant="destructive" onClick={onCancel} disabled={actionLoading !== null}>
+                        予約をキャンセル
+                      </Button>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
           </div>
         )}
