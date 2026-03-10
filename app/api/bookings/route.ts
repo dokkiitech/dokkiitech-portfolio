@@ -1,7 +1,7 @@
 import { createSign } from "crypto"
 import { NextResponse } from "next/server"
 import { bookingSchema } from "@/lib/booking"
-import { createBookingPortal } from "@/lib/booking-portal"
+import { createBookingPortal, generateBookingReference } from "@/lib/booking-portal"
 
 export const runtime = "nodejs"
 
@@ -368,6 +368,7 @@ export async function POST(request: Request) {
 
     const payload = parsed.data
     const mode = getMode()
+    const bookingReference = await generateBookingReference()
 
     if (isInPersonLeadTimeInvalid(payload.bookingType, payload.date)) {
       return NextResponse.json(
@@ -395,7 +396,7 @@ export async function POST(request: Request) {
       let portalError: string | null = null
       try {
         portal = await createBookingPortal({
-          bookingId: `mock_${Date.now()}`,
+          bookingId: bookingReference,
           name: payload.name,
           email: payload.email,
           company: payload.company,
@@ -413,7 +414,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         ok: true,
         mode,
-        bookingId: `mock_${Date.now()}`,
+        bookingId: bookingReference,
         message: "予約リクエストを受け付けました（モック処理）。",
         request: payload,
         contract: {
@@ -508,7 +509,7 @@ export async function POST(request: Request) {
     let portalError: string | null = null
     try {
       portal = await createBookingPortal({
-        bookingId: event.id || `evt_${Date.now()}`,
+        bookingId: bookingReference,
         name: payload.name,
         email: payload.email,
         company: payload.company,
@@ -538,6 +539,7 @@ export async function POST(request: Request) {
       <p>${salutation}</p>
       <p>お打ち合わせのご予約ありがとうございます。下記の内容で受け付けました。</p>
       <ul>
+        <li>予約番号：${bookingReference}</li>
         <li>日程：${dateJp}</li>
         <li>時刻：${payload.timeSlot} - ${endTime}</li>
         <li>形式：${formatLine}</li>
@@ -558,7 +560,7 @@ export async function POST(request: Request) {
       ok: true,
       mode,
       message: "予約を確定しました。Google Calendar 招待と完了メールを送信しました。",
-      bookingId: event.id,
+      bookingId: bookingReference,
       calendarEventUrl: event.htmlLink,
       meetUrl: event.hangoutLink,
       location: event.location,

@@ -337,6 +337,7 @@ export async function PATCH(
       <p>${salutation}</p>
       <p>お打ち合わせの予約内容を変更しました。下記の内容で更新されました。</p>
       <ul>
+        <li>予約番号：${checked.record.booking_id}</li>
         <li>日程：${dateJp}</li>
         <li>時刻：${nextTimeSlot} - ${endTime}</li>
         <li>形式：${formatLine}</li>
@@ -412,6 +413,7 @@ export async function DELETE(
       <p>${salutation}</p>
       <p>お打ち合わせのご予約をキャンセルしました。下記の内容がキャンセル対象です。</p>
       <ul>
+        <li>予約番号：${checked.record.booking_id}</li>
         <li>日程：${dateJp}</li>
         <li>時刻：${checked.record.time_slot} - ${endTime}</li>
         <li>形式：${formatLine}</li>
