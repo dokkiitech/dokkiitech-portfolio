@@ -2,6 +2,7 @@ import { createSign } from "crypto"
 import { NextResponse } from "next/server"
 import { bookingSchema } from "@/lib/booking"
 import { createBookingPortal, generateBookingReference } from "@/lib/booking-portal"
+import { sendDiscordConciergeNotification } from "@/lib/discord-concierge"
 
 export const runtime = "nodejs"
 
@@ -411,6 +412,22 @@ export async function POST(request: Request) {
         portalError = String(error)
       }
 
+      const discord = await sendDiscordConciergeNotification("created", {
+        bookingId: bookingReference,
+        name: payload.name,
+        email: payload.email,
+        company: payload.company,
+        bookingType: payload.bookingType,
+        date: payload.date,
+        timeSlot: payload.timeSlot,
+        agenda: payload.agenda,
+        location: payload.location,
+        status: "新規受付",
+      }).catch((error) => ({ sent: false, reason: String(error) }))
+      if (!discord.sent) {
+        console.error("Failed to send Discord concierge notification (mock):", discord.reason)
+      }
+
       return NextResponse.json({
         ok: true,
         mode,
@@ -555,6 +572,24 @@ export async function POST(request: Request) {
       <p>当日はどうぞよろしくお願い致します。</p>
       `
     )
+
+    const discord = await sendDiscordConciergeNotification("created", {
+      bookingId: bookingReference,
+      name: payload.name,
+      email: payload.email,
+      company: payload.company,
+      bookingType: payload.bookingType,
+      date: payload.date,
+      timeSlot: payload.timeSlot,
+      agenda: payload.agenda,
+      location: payload.location,
+      status: "予約確定",
+      meetUrl: event.hangoutLink,
+      calendarEventUrl: event.htmlLink,
+    }).catch((error) => ({ sent: false, reason: String(error) }))
+    if (!discord.sent) {
+      console.error("Failed to send Discord concierge notification (gcp):", discord.reason)
+    }
 
     return NextResponse.json({
       ok: true,

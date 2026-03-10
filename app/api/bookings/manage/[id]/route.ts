@@ -1,6 +1,7 @@
 import { createSign } from "crypto"
 import { NextResponse } from "next/server"
 import { cancelPortalBooking, updatePortalBooking, verifyPortalAccess } from "@/lib/booking-portal"
+import { sendDiscordConciergeNotification } from "@/lib/discord-concierge"
 
 const DEFAULT_TIMEZONE = process.env.BOOKING_TIMEZONE || "Asia/Tokyo"
 const DEFAULT_OFFSET = process.env.BOOKING_TIMEZONE_OFFSET || "+09:00"
@@ -349,6 +350,24 @@ export async function PATCH(
       UPDATE_FROM_ADDRESS
     )
 
+    const discord = await sendDiscordConciergeNotification("updated", {
+      bookingId: checked.record.booking_id,
+      name: checked.record.name,
+      email: checked.record.email,
+      company: nextCompany,
+      bookingType: nextBookingType,
+      date: nextDate,
+      timeSlot: nextTimeSlot,
+      agenda: nextAgenda,
+      location: nextLocation,
+      status: "予約変更",
+      meetUrl,
+      calendarEventUrl,
+    }).catch((error) => ({ sent: false, reason: String(error) }))
+    if (!discord.sent) {
+      console.error("Failed to send Discord concierge notification (update):", discord.reason)
+    }
+
     return NextResponse.json({
       ok: true,
       message: "予約情報を更新しました。",
@@ -423,6 +442,25 @@ export async function DELETE(
       "dokkiitech予約管理システムキャンセル承りセンター",
       CANCEL_FROM_ADDRESS
     )
+
+    const discord = await sendDiscordConciergeNotification("canceled", {
+      bookingId: checked.record.booking_id,
+      name: checked.record.name,
+      email: checked.record.email,
+      company: checked.record.company,
+      bookingType: checked.record.booking_type,
+      date: checked.record.date,
+      timeSlot: checked.record.time_slot,
+      agenda: checked.record.agenda,
+      location: checked.record.location,
+      status: "キャンセル",
+      meetUrl: checked.record.meet_url,
+      calendarEventUrl: checked.record.calendar_event_url,
+    }).catch((error) => ({ sent: false, reason: String(error) }))
+    if (!discord.sent) {
+      console.error("Failed to send Discord concierge notification (cancel):", discord.reason)
+    }
+
     return NextResponse.json({
       ok: true,
       message: "予約をキャンセルしました。",
