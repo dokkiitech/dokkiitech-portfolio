@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { CopyBookingIdButton } from "@/components/copy-booking-id-button"
 
 type BookingStatus = "active" | "canceled" | "expired"
 
@@ -241,7 +242,12 @@ export default function AppointmentAdminPage() {
                           className="cursor-pointer transition-colors hover:bg-white/5"
                           onClick={() => setSelectedRecord(record)}
                         >
-                          <td className="px-4 py-4 font-mono text-sm">{record.bookingId}</td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-sm">{record.bookingId}</span>
+                              <CopyBookingIdButton bookingId={record.bookingId} size="icon" className="h-8 w-8 shrink-0" />
+                            </div>
+                          </td>
                           <td className="px-4 py-4">
                             <div className="font-medium">{formatBookingDate(record.date)}</div>
                             <div className="text-muted-foreground">{record.timeSlot}</div>
@@ -269,15 +275,13 @@ export default function AppointmentAdminPage() {
 
               <div className="space-y-4 md:hidden">
                 {filteredRecords.map((record) => (
-                  <button
-                    key={record.id}
-                    type="button"
-                    onClick={() => setSelectedRecord(record)}
-                    className="block w-full rounded-2xl border border-border bg-background/60 p-4 text-left"
-                  >
+                  <div key={record.id} className="rounded-2xl border border-border bg-background/60 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="font-mono text-xs text-cyan-300">{record.bookingId}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-mono text-xs text-cyan-300">{record.bookingId}</p>
+                          <CopyBookingIdButton bookingId={record.bookingId} size="icon" className="h-7 w-7 shrink-0" />
+                        </div>
                         <h2 className="mt-1 font-semibold">{record.name}</h2>
                       </div>
                       <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusClassName(record.status)}`}>
@@ -294,7 +298,10 @@ export default function AppointmentAdminPage() {
                         <dd className="text-right">{formatBookingType(record.bookingType)}</dd>
                       </div>
                     </dl>
-                  </button>
+                    <Button type="button" variant="ghost" className="mt-4 w-full" onClick={() => setSelectedRecord(record)}>
+                      詳細を見る
+                    </Button>
+                  </div>
                 ))}
 
                 {!loading && filteredRecords.length === 0 && (
@@ -337,15 +344,13 @@ export default function AppointmentAdminPage() {
 
                   <div className="mt-4 space-y-3">
                     {calendarRecords.map((record) => (
-                      <button
-                        key={record.id}
-                        type="button"
-                        onClick={() => setSelectedRecord(record)}
-                        className="block w-full rounded-2xl border border-border bg-card px-4 py-3 text-left transition-colors hover:bg-white/5"
-                      >
+                      <div key={record.id} className="rounded-2xl border border-border bg-card px-4 py-3 transition-colors hover:bg-white/5">
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="font-mono text-xs text-cyan-300">{record.bookingId}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-mono text-xs text-cyan-300">{record.bookingId}</p>
+                              <CopyBookingIdButton bookingId={record.bookingId} size="icon" className="h-7 w-7 shrink-0" />
+                            </div>
                             <p className="mt-1 font-medium">{record.name}</p>
                           </div>
                           <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusClassName(record.status)}`}>
@@ -356,7 +361,10 @@ export default function AppointmentAdminPage() {
                           <span>{record.timeSlot}</span>
                           <span>{formatBookingType(record.bookingType)}</span>
                         </div>
-                      </button>
+                        <Button type="button" variant="ghost" className="mt-4 w-full" onClick={() => setSelectedRecord(record)}>
+                          詳細を見る
+                        </Button>
+                      </div>
                     ))}
 
                     {!loading && calendarRecords.length === 0 && (
@@ -382,6 +390,10 @@ export default function AppointmentAdminPage() {
                   予約番号 {selectedRecord.bookingId} / {selectedRecord.name}
                 </DialogDescription>
               </DialogHeader>
+
+              <div className="flex justify-start">
+                <CopyBookingIdButton bookingId={selectedRecord.bookingId} className="w-full sm:w-auto" />
+              </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-xl border border-border bg-background/60 p-4">
