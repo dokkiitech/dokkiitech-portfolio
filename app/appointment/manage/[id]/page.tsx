@@ -14,6 +14,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 interface ManageRecord {
   id: string
+  bookingId: string
   name: string
   email: string
   company?: string | null
@@ -222,6 +223,7 @@ export default function ManageBookingPage() {
           title: "予約変更完了",
           detail: `${date} ${timeSlot}`,
           infoLines: [
+            `予約番号: ${record?.bookingId || "-"}`,
             `日程: ${date}`,
             `時間: ${timeSlot}`,
             `形式: ${bookingType === "meet" ? "Google Meet" : "対面"}`,
@@ -255,6 +257,7 @@ export default function ManageBookingPage() {
           title: "予約キャンセル完了",
           detail: `${form.date} ${form.timeSlot}`,
           infoLines: [
+            `予約番号: ${record?.bookingId || "-"}`,
             `日程: ${form.date}`,
             `時間: ${form.timeSlot}`,
             `形式: ${bookingType === "meet" ? "Google Meet" : "対面"}`,
@@ -336,6 +339,7 @@ export default function ManageBookingPage() {
             <div className="space-y-4 rounded-xl border border-border bg-card p-6">
               <h2 className="text-xl font-semibold">現在の予約状況</h2>
               <p className="text-sm text-muted-foreground">対象: {record.name} / {record.email}</p>
+              <p className="text-sm text-cyan-300">予約番号: {record.bookingId}</p>
 
               <div className="grid gap-3 text-sm sm:grid-cols-2">
                 <div className="rounded-lg border border-border p-3">

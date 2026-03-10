@@ -20,6 +20,7 @@ export async function POST(
       ok: true,
       record: {
         id: checked.record.id,
+        bookingId: checked.record.booking_id,
         name: checked.record.name,
         email: checked.record.email,
         company: checked.record.company,
