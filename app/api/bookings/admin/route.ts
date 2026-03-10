@@ -3,14 +3,6 @@ import { listBookingPortals, type BookingPortalStatus } from "@/lib/booking-port
 
 export const runtime = "nodejs"
 
-function getAdminKey(): string {
-  const key = process.env.BOOKING_ADMIN_KEY
-  if (!key) {
-    throw new Error("BOOKING_ADMIN_KEY is not configured")
-  }
-  return key
-}
-
 function isValidStatus(value: string | null): value is BookingPortalStatus {
   return value === "active" || value === "canceled" || value === "expired"
 }
@@ -22,13 +14,6 @@ function resolveStatus(status: BookingPortalStatus, expiresAt: string): BookingP
 
 export async function GET(request: Request) {
   try {
-    const configuredKey = getAdminKey()
-    const providedKey = request.headers.get("x-booking-admin-key") || ""
-
-    if (providedKey !== configuredKey) {
-      return NextResponse.json({ ok: false, message: "管理者認証に失敗しました。" }, { status: 401 })
-    }
-
     const { searchParams } = new URL(request.url)
     const date = searchParams.get("date") || undefined
     const statusParam = searchParams.get("status")
@@ -64,9 +49,6 @@ export async function GET(request: Request) {
       })),
     })
   } catch (error) {
-    const message = error instanceof Error && error.message.includes("BOOKING_ADMIN_KEY")
-      ? "管理画面キーが未設定です。"
-      : "予約一覧の取得に失敗しました。"
-    return NextResponse.json({ ok: false, message, error: String(error) }, { status: 500 })
+    return NextResponse.json({ ok: false, message: "予約一覧の取得に失敗しました。", error: String(error) }, { status: 500 })
   }
 }

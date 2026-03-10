@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { format } from "date-fns"
 import { ja } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
@@ -57,8 +57,6 @@ function getStatusClassName(value: BookingStatus): string {
 }
 
 export default function AppointmentAdminPage() {
-  const [adminKey, setAdminKey] = useState("")
-  const [authenticated, setAuthenticated] = useState(false)
   const [records, setRecords] = useState<AdminBookingRecord[]>([])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
@@ -68,7 +66,7 @@ export default function AppointmentAdminPage() {
     query: "",
   })
 
-  const loadBookings = async (nextFilters = filters, key = adminKey) => {
+  const loadBookings = async (nextFilters = filters) => {
     setLoading(true)
     setMessage("")
     try {
@@ -76,20 +74,14 @@ export default function AppointmentAdminPage() {
       if (nextFilters.date) params.set("date", nextFilters.date)
       if (nextFilters.status !== "all") params.set("status", nextFilters.status)
 
-      const response = await fetch(`/api/bookings/admin?${params.toString()}`, {
-        headers: {
-          "x-booking-admin-key": key,
-        },
-      })
+      const response = await fetch(`/api/bookings/admin?${params.toString()}`)
       const json = await response.json()
       if (!response.ok || !json.ok) {
-        setAuthenticated(false)
         setRecords([])
         setMessage(json.message || "予約一覧を取得できませんでした。")
         return
       }
 
-      setAuthenticated(true)
       setRecords(Array.isArray(json.records) ? (json.records as AdminBookingRecord[]) : [])
     } catch {
       setMessage("通信エラーが発生しました。時間をおいて再度お試しください。")
@@ -108,6 +100,10 @@ export default function AppointmentAdminPage() {
         .includes(keyword)
     )
   }, [filters.query, records])
+
+  useEffect(() => {
+    void loadBookings()
+  }, [])
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -128,19 +124,7 @@ export default function AppointmentAdminPage() {
 
           <div className="mt-6 grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
             <aside className="rounded-2xl border border-border bg-background/60 p-4">
-              <div>
-                <Label htmlFor="adminKey">管理画面キー</Label>
-                <Input
-                  id="adminKey"
-                  type="password"
-                  value={adminKey}
-                  onChange={(event) => setAdminKey(event.target.value)}
-                  placeholder="BOOKING_ADMIN_KEY"
-                  className="mt-2"
-                />
-              </div>
-
-              <div className="mt-4 space-y-4">
+              <div className="space-y-4">
                 <div>
                   <Label htmlFor="filterDate">日付で絞り込み</Label>
                   <Input
@@ -180,8 +164,8 @@ export default function AppointmentAdminPage() {
               </div>
 
               <div className="mt-5 flex flex-col gap-2">
-                <Button onClick={() => void loadBookings()} disabled={loading || !adminKey}>
-                  {loading ? "読み込み中..." : authenticated ? "再読み込み" : "認証して一覧表示"}
+                <Button onClick={() => void loadBookings()} disabled={loading}>
+                  {loading ? "読み込み中..." : "再読み込み"}
                 </Button>
                 <Button
                   type="button"
@@ -189,9 +173,7 @@ export default function AppointmentAdminPage() {
                   onClick={() => {
                     const resetFilters = { date: "", status: "all", query: "" }
                     setFilters(resetFilters)
-                    if (authenticated) {
-                      void loadBookings(resetFilters)
-                    }
+                    void loadBookings(resetFilters)
                   }}
                 >
                   絞り込みをリセット
