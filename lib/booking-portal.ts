@@ -24,6 +24,11 @@ export interface BookingPortalRecord {
   updated_at: string
 }
 
+interface ListBookingPortalsFilters {
+  date?: string
+  status?: BookingPortalStatus | "all"
+}
+
 interface CreatePortalInput {
   bookingId: string
   name: string
@@ -130,6 +135,25 @@ async function getPortalRecord(id: string): Promise<BookingPortalRecord | null> 
   if (!response.ok) throw new Error(`Failed to fetch booking portal: ${await response.text()}`)
   const rows = (await response.json()) as BookingPortalRecord[]
   return rows[0] || null
+}
+
+export async function listBookingPortals(filters: ListBookingPortalsFilters = {}): Promise<BookingPortalRecord[]> {
+  const params = new URLSearchParams({
+    select: "*",
+    order: "date.desc,time_slot.desc,created_at.desc",
+  })
+
+  if (filters.date) {
+    params.set("date", `eq.${filters.date}`)
+  }
+
+  if (filters.status && filters.status !== "all") {
+    params.set("status", `eq.${filters.status}`)
+  }
+
+  const response = await supabaseFetch(`booking_portal?${params.toString()}`)
+  if (!response.ok) throw new Error(`Failed to list booking portals: ${await response.text()}`)
+  return (await response.json()) as BookingPortalRecord[]
 }
 
 export async function verifyPortalAccess(id: string, token: string, password?: string): Promise<PortalAccess> {
