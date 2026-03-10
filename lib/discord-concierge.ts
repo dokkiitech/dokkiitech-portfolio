@@ -68,6 +68,7 @@ export async function sendDiscordConciergeNotification(
   const adminUrl = getAdminUrl()
   const theme = buildMessage(kind)
   const formatLine = booking.bookingType === "meet" ? "Google Meet" : `対面${booking.location ? ` / ${booking.location}` : ""}`
+  const guestLabel = booking.company ? `${booking.company}\n${booking.name}` : booking.name
 
   const response = await fetch(webhookUrl, {
     method: "POST",
@@ -87,7 +88,7 @@ export async function sendDiscordConciergeNotification(
             { name: "予約番号", value: `\`${booking.bookingId}\``, inline: true },
             { name: "ステータス", value: booking.status, inline: true },
             { name: "方式", value: formatLine, inline: true },
-            { name: "予約者", value: booking.company ? `${booking.company} / ${booking.name}` : booking.name, inline: true },
+            { name: "予約者", value: guestLabel, inline: true },
             { name: "メール", value: booking.email, inline: true },
             { name: "日時", value: `${booking.date} ${booking.timeSlot}`, inline: true },
             { name: "ご相談内容", value: truncate(booking.agenda) || "-", inline: false },
