@@ -57,6 +57,10 @@ BOOKING_SLOT_END_HOUR=24
 RESEND_API_KEY=
 RESEND_FROM=booking@your-domain.com
 
+# Discord webhook（コンシェルジュ通知）
+DISCORD_CONCIERGE_WEBHOOK_URL=
+BOOKING_ADMIN_BASE_URL=https://your-domain.com
+
 # 予約者専用ページ（Supabase）
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
@@ -107,6 +111,7 @@ BOOKING_PORTAL_BASE_URL=https://your-domain.com
     - `meet` の場合は Meet URL 自動発行
     - `対面` の場合は `location` をイベント場所に設定
     - Resend 設定時は予約完了メールを送信
+    - Discord webhook 設定時は、コンシェルジュ名義のリッチ通知を Discord に送信
     - attendees招待を有効にするには、Google Workspace の Domain-Wide Delegation + `GOOGLE_DELEGATED_USER_EMAIL` が必要
   - Supabase設定済みの場合は、予約後に `managePortal.url`（予約者専用ページURL）を返却
   - Resendメール本文に `managePortal.url` とパスワードを同梱

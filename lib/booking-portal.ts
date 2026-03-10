@@ -24,6 +24,11 @@ export interface BookingPortalRecord {
   updated_at: string
 }
 
+interface ListBookingPortalsFilters {
+  date?: string
+  status?: BookingPortalStatus | "all"
+}
+
 interface CreatePortalInput {
   bookingId: string
   name: string
@@ -130,6 +135,52 @@ async function getPortalRecord(id: string): Promise<BookingPortalRecord | null> 
   if (!response.ok) throw new Error(`Failed to fetch booking portal: ${await response.text()}`)
   const rows = (await response.json()) as BookingPortalRecord[]
   return rows[0] || null
+}
+
+async function bookingIdExists(bookingId: string): Promise<boolean> {
+  const response = await supabaseFetch(
+    `booking_portal?booking_id=eq.${encodeURIComponent(bookingId)}&select=id&limit=1`
+  )
+  if (!response.ok) throw new Error(`Failed to check booking id: ${await response.text()}`)
+  const rows = (await response.json()) as Array<Pick<BookingPortalRecord, "id">>
+  return rows.length > 0
+}
+
+export async function generateBookingReference(): Promise<string> {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const candidate = String(Math.floor(100000000 + Math.random() * 900000000))
+    try {
+      if (!(await bookingIdExists(candidate))) {
+        return candidate
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("Supabase env missing")) {
+        return candidate
+      }
+      throw error
+    }
+  }
+
+  throw new Error("Failed to generate a unique booking reference")
+}
+
+export async function listBookingPortals(filters: ListBookingPortalsFilters = {}): Promise<BookingPortalRecord[]> {
+  const params = new URLSearchParams({
+    select: "*",
+    order: "date.desc,time_slot.desc,created_at.desc",
+  })
+
+  if (filters.date) {
+    params.set("date", `eq.${filters.date}`)
+  }
+
+  if (filters.status && filters.status !== "all") {
+    params.set("status", `eq.${filters.status}`)
+  }
+
+  const response = await supabaseFetch(`booking_portal?${params.toString()}`)
+  if (!response.ok) throw new Error(`Failed to list booking portals: ${await response.text()}`)
+  return (await response.json()) as BookingPortalRecord[]
 }
 
 export async function verifyPortalAccess(id: string, token: string, password?: string): Promise<PortalAccess> {

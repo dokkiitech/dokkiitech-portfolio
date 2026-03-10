@@ -1,7 +1,8 @@
 import { createSign } from "crypto"
 import { NextResponse } from "next/server"
 import { bookingSchema } from "@/lib/booking"
-import { createBookingPortal } from "@/lib/booking-portal"
+import { createBookingPortal, generateBookingReference } from "@/lib/booking-portal"
+import { sendDiscordConciergeNotification } from "@/lib/discord-concierge"
 
 export const runtime = "nodejs"
 
@@ -368,6 +369,7 @@ export async function POST(request: Request) {
 
     const payload = parsed.data
     const mode = getMode()
+    const bookingReference = await generateBookingReference()
 
     if (isInPersonLeadTimeInvalid(payload.bookingType, payload.date)) {
       return NextResponse.json(
@@ -395,7 +397,7 @@ export async function POST(request: Request) {
       let portalError: string | null = null
       try {
         portal = await createBookingPortal({
-          bookingId: `mock_${Date.now()}`,
+          bookingId: bookingReference,
           name: payload.name,
           email: payload.email,
           company: payload.company,
@@ -410,10 +412,26 @@ export async function POST(request: Request) {
         portalError = String(error)
       }
 
+      const discord = await sendDiscordConciergeNotification("created", {
+        bookingId: bookingReference,
+        name: payload.name,
+        email: payload.email,
+        company: payload.company,
+        bookingType: payload.bookingType,
+        date: payload.date,
+        timeSlot: payload.timeSlot,
+        agenda: payload.agenda,
+        location: payload.location,
+        status: "新規受付",
+      }).catch((error) => ({ sent: false, reason: String(error) }))
+      if (!discord.sent) {
+        console.error("Failed to send Discord concierge notification (mock):", discord.reason)
+      }
+
       return NextResponse.json({
         ok: true,
         mode,
-        bookingId: `mock_${Date.now()}`,
+        bookingId: bookingReference,
         message: "予約リクエストを受け付けました（モック処理）。",
         request: payload,
         contract: {
@@ -508,7 +526,7 @@ export async function POST(request: Request) {
     let portalError: string | null = null
     try {
       portal = await createBookingPortal({
-        bookingId: event.id || `evt_${Date.now()}`,
+        bookingId: bookingReference,
         name: payload.name,
         email: payload.email,
         company: payload.company,
@@ -538,6 +556,7 @@ export async function POST(request: Request) {
       <p>${salutation}</p>
       <p>お打ち合わせのご予約ありがとうございます。下記の内容で受け付けました。</p>
       <ul>
+        <li>予約番号：${bookingReference}</li>
         <li>日程：${dateJp}</li>
         <li>時刻：${payload.timeSlot} - ${endTime}</li>
         <li>形式：${formatLine}</li>
@@ -554,11 +573,29 @@ export async function POST(request: Request) {
       `
     )
 
+    const discord = await sendDiscordConciergeNotification("created", {
+      bookingId: bookingReference,
+      name: payload.name,
+      email: payload.email,
+      company: payload.company,
+      bookingType: payload.bookingType,
+      date: payload.date,
+      timeSlot: payload.timeSlot,
+      agenda: payload.agenda,
+      location: payload.location,
+      status: "予約確定",
+      meetUrl: event.hangoutLink,
+      calendarEventUrl: event.htmlLink,
+    }).catch((error) => ({ sent: false, reason: String(error) }))
+    if (!discord.sent) {
+      console.error("Failed to send Discord concierge notification (gcp):", discord.reason)
+    }
+
     return NextResponse.json({
       ok: true,
       mode,
       message: "予約を確定しました。Google Calendar 招待と完了メールを送信しました。",
-      bookingId: event.id,
+      bookingId: bookingReference,
       calendarEventUrl: event.htmlLink,
       meetUrl: event.hangoutLink,
       location: event.location,
