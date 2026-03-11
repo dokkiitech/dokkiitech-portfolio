@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Navigation } from "@/components/navigation"
 import { FirstVisitLoader } from "@/components/first-visit-loader"
 import { CtrlCTerminalShortcut } from "@/components/ctrl-c-terminal-shortcut"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -73,6 +74,7 @@ export default function RootLayout({
           <CtrlCTerminalShortcut />
           <Navigation />
           <div className="pt-16">{children}</div>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

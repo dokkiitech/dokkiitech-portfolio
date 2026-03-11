@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 import { BookingCompletionScreen } from "@/components/booking-completion-screen"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { CopyBookingIdButton } from "@/components/copy-booking-id-button"
 
 interface ManageRecord {
   id: string
@@ -337,9 +338,14 @@ export default function ManageBookingPage() {
         {step === "manage" && record && (
           <div className="mt-8 space-y-6">
             <div className="space-y-4 rounded-xl border border-border bg-card p-6">
-              <h2 className="text-xl font-semibold">現在の予約状況</h2>
-              <p className="text-sm text-muted-foreground">対象: {record.name} / {record.email}</p>
-              <p className="text-sm text-cyan-300">予約番号: {record.bookingId}</p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold">現在の予約状況</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">対象: {record.name} / {record.email}</p>
+                  <p className="mt-1 text-sm text-cyan-300">予約番号: {record.bookingId}</p>
+                </div>
+                <CopyBookingIdButton bookingId={record.bookingId} className="w-full sm:w-auto" />
+              </div>
 
               <div className="grid gap-3 text-sm sm:grid-cols-2">
                 <div className="rounded-lg border border-border p-3">
