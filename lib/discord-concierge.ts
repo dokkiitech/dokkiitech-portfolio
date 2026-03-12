@@ -1,4 +1,5 @@
 type ConciergeNotificationKind = "created" | "updated" | "canceled"
+type ConciergeWebhookPayload = Record<string, unknown>
 
 interface ConciergeBookingPayload {
   bookingId: string
@@ -19,7 +20,7 @@ function getWebhookUrl(): string | null {
   return process.env.DISCORD_CONCIERGE_WEBHOOK_URL || null
 }
 
-async function postWebhook(body: Record<string, unknown>) {
+async function postWebhook(body: ConciergeWebhookPayload) {
   const webhookUrl = getWebhookUrl()
   if (!webhookUrl) {
     return { sent: false, reason: "DISCORD_CONCIERGE_WEBHOOK_URL missing" }
@@ -134,4 +135,8 @@ export async function sendDiscordConciergeTextNotification(content: string) {
     content,
     allowed_mentions: { parse: [] },
   })
+}
+
+export async function sendDiscordConciergePayloadNotification(payload: ConciergeWebhookPayload) {
+  return postWebhook(payload)
 }

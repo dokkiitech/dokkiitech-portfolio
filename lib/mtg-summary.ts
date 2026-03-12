@@ -1,5 +1,5 @@
 import { listBookingPortals, type BookingPortalRecord } from "@/lib/booking-portal"
-import { sendDiscordConciergeTextNotification } from "@/lib/discord-concierge"
+import { sendDiscordConciergePayloadNotification } from "@/lib/discord-concierge"
 
 const JST_OFFSET = "+09:00"
 const JST_TIME_ZONE = "Asia/Tokyo"
@@ -43,6 +43,16 @@ function formatDbStatusLine(status: string, detail?: string) {
   return detail ? `${status}\n${detail}` : status
 }
 
+function truncateField(value: string, max = 1000) {
+  return value.length > max ? `${value.slice(0, max - 1)}…` : value
+}
+
+function resolveEmbedColor(status: string) {
+  if (status === "Supabase 取得成功") return 0x22c55e
+  if (status === "Supabase 未照会") return 0xf59e0b
+  return 0xef4444
+}
+
 async function fetchMeetings(date: string) {
   return listBookingPortals({ date, status: "active" })
 }
@@ -75,18 +85,43 @@ export async function runMtgSummary() {
     }
   }
 
-  const content = [
-    "MTGデイリーサマリー",
-    `対象日: ${today} / ${tomorrow}`,
-    "",
-    buildSection("今日のMTG", todayMeetings),
-    "",
-    buildSection("明日のMTG", tomorrowMeetings),
-    "",
-    `DBアクセス状況\n${formatDbStatusLine(dbStatus, dbDetail)}`,
-  ].join("\n")
+  const todaySection = buildSection("今日のMTG", todayMeetings)
+  const tomorrowSection = buildSection("明日のMTG", tomorrowMeetings)
+  const dbSection = formatDbStatusLine(dbStatus, dbDetail)
 
-  const notifyResult = await sendDiscordConciergeTextNotification(content)
+  const notifyResult = await sendDiscordConciergePayloadNotification({
+    username: "コンシェルジュ",
+    content: "本日の MTG デイリーサマリーです。",
+    allowed_mentions: { parse: [] },
+    embeds: [
+      {
+        title: "MTGデイリーサマリー",
+        description: `対象日: ${today} / ${tomorrow}`,
+        color: resolveEmbedColor(dbStatus),
+        fields: [
+          {
+            name: `今日のMTG (${todayMeetings.length}件)`,
+            value: truncateField(todaySection.replace(/^今日のMTG\n/, "")),
+            inline: false,
+          },
+          {
+            name: `明日のMTG (${tomorrowMeetings.length}件)`,
+            value: truncateField(tomorrowSection.replace(/^明日のMTG\n/, "")),
+            inline: false,
+          },
+          {
+            name: "DBアクセス状況",
+            value: truncateField(dbSection),
+            inline: false,
+          },
+        ],
+        footer: {
+          text: "DOKKIITECH Concierge",
+        },
+        timestamp: new Date().toISOString(),
+      },
+    ],
+  })
 
   return {
     ok: notifyResult.sent,
