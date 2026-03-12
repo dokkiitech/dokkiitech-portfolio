@@ -1,22 +1,36 @@
 import { listBookingPortals, type BookingPortalRecord } from "@/lib/booking-portal"
 import { sendDiscordConciergePayloadNotification } from "@/lib/discord-concierge"
 
-const JST_OFFSET = "+09:00"
 const JST_TIME_ZONE = "Asia/Tokyo"
 
-function getJstToday() {
-  const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: JST_TIME_ZONE,
+function getDatePartsInTimeZone(date: Date, timeZone: string) {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   })
 
-  return formatter.format(new Date())
+  const parts = formatter.formatToParts(date)
+  const year = parts.find((part) => part.type === "year")?.value
+  const month = parts.find((part) => part.type === "month")?.value
+  const day = parts.find((part) => part.type === "day")?.value
+
+  if (!year || !month || !day) {
+    throw new Error(`Failed to format date in time zone: ${timeZone}`)
+  }
+
+  return { year, month, day }
+}
+
+function getJstToday() {
+  const { year, month, day } = getDatePartsInTimeZone(new Date(), JST_TIME_ZONE)
+  return `${year}-${month}-${day}`
 }
 
 function addDays(date: string, days: number) {
-  const base = new Date(`${date}T00:00:00${JST_OFFSET}`)
+  const [year, month, day] = date.split("-").map(Number)
+  const base = new Date(Date.UTC(year, month - 1, day))
   base.setUTCDate(base.getUTCDate() + days)
   return base.toISOString().slice(0, 10)
 }
