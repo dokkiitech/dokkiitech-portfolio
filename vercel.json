@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/mtg-summary",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

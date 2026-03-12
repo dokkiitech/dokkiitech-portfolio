@@ -19,6 +19,27 @@ function getWebhookUrl(): string | null {
   return process.env.DISCORD_CONCIERGE_WEBHOOK_URL || null
 }
 
+async function postWebhook(body: Record<string, unknown>) {
+  const webhookUrl = getWebhookUrl()
+  if (!webhookUrl) {
+    return { sent: false, reason: "DISCORD_CONCIERGE_WEBHOOK_URL missing" }
+  }
+
+  const response = await fetch(webhookUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    return { sent: false, reason: await response.text() }
+  }
+
+  return { sent: true }
+}
+
 function getAdminUrl(): string | null {
   const base =
     process.env.BOOKING_ADMIN_BASE_URL ||
@@ -60,66 +81,57 @@ export async function sendDiscordConciergeNotification(
   kind: ConciergeNotificationKind,
   booking: ConciergeBookingPayload
 ) {
-  const webhookUrl = getWebhookUrl()
-  if (!webhookUrl) {
-    return { sent: false, reason: "DISCORD_CONCIERGE_WEBHOOK_URL missing" }
-  }
-
   const adminUrl = getAdminUrl()
   const theme = buildMessage(kind)
   const formatLine = booking.bookingType === "meet" ? "Google Meet" : `対面${booking.location ? ` / ${booking.location}` : ""}`
   const guestLabel = booking.company ? `${booking.company}\n${booking.name}` : booking.name
 
-  const response = await fetch(webhookUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      username: "コンシェルジュ",
-      content: "ご予約に関する最新のお知らせをお届けします。",
-      allowed_mentions: { parse: [] },
-      embeds: [
-        {
-          title: theme.title,
-          description: theme.description,
-          color: theme.color,
-          fields: [
-            { name: "予約番号", value: `\`${booking.bookingId}\``, inline: true },
-            { name: "ステータス", value: booking.status, inline: true },
-            { name: "方式", value: formatLine, inline: true },
-            { name: "予約者", value: guestLabel, inline: true },
-            { name: "メール", value: booking.email, inline: true },
-            { name: "日時", value: `${booking.date} ${booking.timeSlot}`, inline: true },
-            { name: "ご相談内容", value: truncate(booking.agenda) || "-", inline: false },
-            {
-              name: "管理画面",
-              value: adminUrl ? `[予約管理ページを開く](${adminUrl})` : "BOOKING_ADMIN_BASE_URL または NEXT_PUBLIC_SITE_URL を設定するとリンクを表示できます。",
-              inline: false,
-            },
-            {
-              name: "関連リンク",
-              value:
-                booking.meetUrl || booking.calendarEventUrl
-                  ? [booking.meetUrl ? `[Meet](${booking.meetUrl})` : null, booking.calendarEventUrl ? `[Calendar](${booking.calendarEventUrl})` : null]
-                      .filter(Boolean)
-                      .join(" / ")
-                  : "なし",
-              inline: false,
-            },
-          ],
-          footer: {
-            text: "DOKKIITECH Concierge",
+  return postWebhook({
+    username: "コンシェルジュ",
+    content: "ご予約に関する最新のお知らせをお届けします。",
+    allowed_mentions: { parse: [] },
+    embeds: [
+      {
+        title: theme.title,
+        description: theme.description,
+        color: theme.color,
+        fields: [
+          { name: "予約番号", value: `\`${booking.bookingId}\``, inline: true },
+          { name: "ステータス", value: booking.status, inline: true },
+          { name: "方式", value: formatLine, inline: true },
+          { name: "予約者", value: guestLabel, inline: true },
+          { name: "メール", value: booking.email, inline: true },
+          { name: "日時", value: `${booking.date} ${booking.timeSlot}`, inline: true },
+          { name: "ご相談内容", value: truncate(booking.agenda) || "-", inline: false },
+          {
+            name: "管理画面",
+            value: adminUrl ? `[予約管理ページを開く](${adminUrl})` : "BOOKING_ADMIN_BASE_URL または NEXT_PUBLIC_SITE_URL を設定するとリンクを表示できます。",
+            inline: false,
           },
-          timestamp: new Date().toISOString(),
+          {
+            name: "関連リンク",
+            value:
+              booking.meetUrl || booking.calendarEventUrl
+                ? [booking.meetUrl ? `[Meet](${booking.meetUrl})` : null, booking.calendarEventUrl ? `[Calendar](${booking.calendarEventUrl})` : null]
+                    .filter(Boolean)
+                    .join(" / ")
+                : "なし",
+            inline: false,
+          },
+        ],
+        footer: {
+          text: "DOKKIITECH Concierge",
         },
-      ],
-    }),
+        timestamp: new Date().toISOString(),
+      },
+    ],
   })
+}
 
-  if (!response.ok) {
-    return { sent: false, reason: await response.text() }
-  }
-
-  return { sent: true }
+export async function sendDiscordConciergeTextNotification(content: string) {
+  return postWebhook({
+    username: "コンシェルジュ",
+    content,
+    allowed_mentions: { parse: [] },
+  })
 }

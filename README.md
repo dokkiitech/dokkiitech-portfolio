@@ -65,7 +65,23 @@ BOOKING_ADMIN_BASE_URL=https://your-domain.com
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 BOOKING_PORTAL_BASE_URL=https://your-domain.com
+
+# Vercel Cron（MTGデイリーサマリー）
+CRON_SECRET=
 ```
+
+### MTGデイリーサマリー用の必須 env
+
+- `CRON_SECRET`
+  - `/api/cron/mtg-summary` の認証用
+  - `Authorization: Bearer <CRON_SECRET>` または `x-cron-secret` を受け付けます
+- `DISCORD_CONCIERGE_WEBHOOK_URL`
+  - Discord の投稿先 webhook URL
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+  - `booking_portal` テーブルの当日・翌日分取得に使用
+
+Supabase に接続できない場合でも、Discord には `DBアクセス状況` セクション付きで失敗通知を送る実装です。
 
 ## Zenn 連携仕様
 
@@ -153,6 +169,41 @@ create table if not exists booking_portal (
    - Build Command: `pnpm build`
 4. Environment Variables に上記 `.env.local` と同じ値を設定
 5. Deploy
+
+## Vercel Cron 設定
+
+- エンドポイント: `/api/cron/mtg-summary`
+- 実行時刻: 毎日 09:00 JST
+- Vercel cron の schedule: `0 0 * * *`
+
+Vercel Cron の cron 式は UTC 基準です。  
+09:00 JST は UTC では 00:00 のため、`0 0 * * *` を設定します。
+
+`vercel.json` の例:
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/cron/mtg-summary",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
+```
+
+### MTGサマリーの内容
+
+Discord には以下 3 セクションを日本語で投稿します。
+
+- `今日のMTG`
+- `明日のMTG`
+- `DBアクセス状況`
+
+当日・翌日に有効な予約が 0 件の場合は各セクションで `なし` を明示します。  
+Supabase の env 不足やクエリ失敗時も、`DBアクセス状況` に `Supabase 未照会` または `Supabase 取得失敗` を明記します。
+
+管理画面 `/appointment/admin` には、同じサマリーを即時送信する手動実行ボタンもあります。
 
 ## 検証コマンド
 
