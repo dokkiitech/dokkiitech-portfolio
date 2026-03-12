@@ -82,6 +82,8 @@ export default function AppointmentAdminPage() {
   const [records, setRecords] = useState<AdminBookingRecord[]>([])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
+  const [mtgSummaryLoading, setMtgSummaryLoading] = useState(false)
+  const [mtgSummaryMessage, setMtgSummaryMessage] = useState("")
   const [selectedRecord, setSelectedRecord] = useState<AdminBookingRecord | null>(null)
   const [calendarDate, setCalendarDate] = useState<Date | undefined>(new Date())
   const [filters, setFilters] = useState<SearchFilters>({
@@ -132,6 +134,32 @@ export default function AppointmentAdminPage() {
     [filteredRecords, selectedDateKey]
   )
 
+  const sendMtgSummary = async () => {
+    setMtgSummaryLoading(true)
+    setMtgSummaryMessage("")
+
+    try {
+      const response = await fetch("/api/bookings/admin/mtg-summary", {
+        method: "POST",
+      })
+      const json = await response.json()
+
+      if (!response.ok || !json.ok) {
+        const detail = typeof json.detail === "string" ? `\n${json.detail}` : ""
+        setMtgSummaryMessage((json.message || "MTG サマリーの送信に失敗しました。") + detail)
+        return
+      }
+
+      setMtgSummaryMessage(
+        `${json.message || "MTG サマリーを送信しました。"}\nDB: ${json.dbStatus || "-"} / 今日 ${json.todayCount ?? 0}件 / 明日 ${json.tomorrowCount ?? 0}件`
+      )
+    } catch {
+      setMtgSummaryMessage("通信エラーが発生しました。時間をおいて再度お試しください。")
+    } finally {
+      setMtgSummaryLoading(false)
+    }
+  }
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -144,8 +172,13 @@ export default function AppointmentAdminPage() {
                 一覧表示とカレンダービューを切り替えながら、予約番号ベースで確認できます。
               </p>
             </div>
-            <div className="text-sm text-muted-foreground">
-              表示件数: <span className="font-medium text-foreground">{filteredRecords.length}</span>
+            <div className="flex flex-col items-start gap-3 sm:items-end">
+              <Button type="button" variant="outline" onClick={() => void sendMtgSummary()} disabled={mtgSummaryLoading}>
+                {mtgSummaryLoading ? "送信中..." : "MTGデイリーサマリーを手動送信"}
+              </Button>
+              <div className="text-sm text-muted-foreground">
+                表示件数: <span className="font-medium text-foreground">{filteredRecords.length}</span>
+              </div>
             </div>
           </div>
 
@@ -215,6 +248,7 @@ export default function AppointmentAdminPage() {
           </Accordion>
 
           {message && <p className="mt-4 whitespace-pre-line text-sm text-rose-300">{message}</p>}
+          {mtgSummaryMessage && <p className="mt-4 whitespace-pre-line text-sm text-cyan-200">{mtgSummaryMessage}</p>}
 
           <Tabs defaultValue="list" className="mt-6">
             <TabsList>
