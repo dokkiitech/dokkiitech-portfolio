@@ -19,6 +19,35 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: [
+          "var(--font-inter)",
+          "var(--font-noto-sans-jp)",
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Hiragino Sans",
+          "Hiragino Kaku Gothic ProN",
+          "Yu Gothic",
+          "Meiryo",
+          "sans-serif",
+        ],
+      },
+      fontSize: {
+        // 1:1.6 modular scale (golden ratio)
+        "golden-xs": ["0.39rem", { lineHeight: "1.6" }],
+        "golden-sm": ["0.625rem", { lineHeight: "1.6" }],
+        "golden-base": ["1rem", { lineHeight: "1.6" }],
+        "golden-lg": ["1.6rem", { lineHeight: "1.3" }],
+        "golden-xl": ["2.56rem", { lineHeight: "1.2" }],
+        "golden-2xl": ["4.096rem", { lineHeight: "1.1" }],
+        "golden-3xl": ["6.554rem", { lineHeight: "1.05" }],
+      },
+      lineHeight: {
+        golden: "1.6",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
