@@ -84,6 +84,12 @@ function normalizeDateInput(raw: string): string | null {
     year = Number(s.slice(0, 4))
     month = Number(s.slice(4, 6))
     day = Number(s.slice(6, 8))
+  } else if (/^\d{3,4}$/.test(s)) {
+    // MDD / MMDD(年省略、今年扱い)。"2026" のような年単独は月の妥当性チェックで弾かれる
+    const monthLen = s.length - 2
+    year = new Date().getFullYear()
+    month = Number(s.slice(0, monthLen))
+    day = Number(s.slice(monthLen))
   } else {
     const full = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
     const short = s.match(/^(\d{1,2})-(\d{1,2})$/)
