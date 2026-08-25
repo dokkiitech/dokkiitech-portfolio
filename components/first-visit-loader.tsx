@@ -59,7 +59,7 @@ export function FirstVisitLoader() {
     setShow(true)
     ;(window as unknown as { __DOKKII_SPLASH_ACTIVE?: boolean }).__DOKKII_SPLASH_ACTIVE = true
 
-    const intervalMs = 260
+    const intervalMs = 100
     const lineTimer = setInterval(() => {
       setVisibleCount((prev) => Math.min(prev + 1, logs.length))
     }, intervalMs)
@@ -72,7 +72,7 @@ export function FirstVisitLoader() {
         ;(window as unknown as { __DOKKII_SPLASH_ACTIVE?: boolean }).__DOKKII_SPLASH_ACTIVE = false
         window.dispatchEvent(new CustomEvent("dokkii:splash-finished"))
       }, 360)
-    }, intervalMs * logs.length + 1000)
+    }, intervalMs * logs.length + 600)
 
     return () => {
       clearInterval(lineTimer)
