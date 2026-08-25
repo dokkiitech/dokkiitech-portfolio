@@ -57,23 +57,26 @@ function truncate(value: string, max = 280): string {
 function buildMessage(kind: ConciergeNotificationKind) {
   if (kind === "created") {
     return {
-      title: "新しいご予約を承りました",
-      description: "コンシェルジュよりご案内です。新しいお打ち合わせのご予約が入りました。ご都合のよいタイミングでご確認くださいませ。",
+      title: "あたらしい ごよやくが はいりましたよ",
+      description:
+        "トリエルです。あたらしい おうちあわせの ごよやくが とどきました。\nあわてなくて だいじょうぶ。おちゃでも のみながら、ゆっくり かくにん してくださいね。",
       color: 0x7dd3fc,
     }
   }
 
   if (kind === "updated") {
     return {
-      title: "ご予約内容が更新されました",
-      description: "コンシェルジュよりご報告です。既存のご予約内容に変更がございました。最新情報をご確認くださいませ。",
+      title: "ごよやくの ないようが かわりましたよ",
+      description:
+        "トリエルです。ごよやくの ないようが すこし かわったようです。\nまちがいが ないか、いちど みておいて あげてくださいね。",
       color: 0xfbbf24,
     }
   }
 
   return {
-    title: "ご予約がキャンセルされました",
-    description: "コンシェルジュよりご連絡です。ご予約のキャンセルを承りました。必要に応じてご確認くださいませ。",
+    title: "ごよやくが キャンセルに なりました",
+    description:
+      "トリエルです。ざんねんですが、ごよやくの キャンセルを うけつけました。\nこういうことも ありますよ。きに しすぎては いけませんからね。",
     color: 0xfb7185,
   }
 }
@@ -87,9 +90,9 @@ export async function sendDiscordConciergeNotification(
   const formatLine = booking.bookingType === "meet" ? "Google Meet" : `対面${booking.location ? ` / ${booking.location}` : ""}`
   const guestLabel = booking.company ? `${booking.company}\n${booking.name}` : booking.name
 
+  // 名前・アイコンは Discord 側の webhook 設定を使うため username は指定しない
   return postWebhook({
-    username: "コンシェルジュ",
-    content: "ご予約に関する最新のお知らせをお届けします。",
+    content: "あら、あなたに おしらせが とどいていますよ。",
     allowed_mentions: { parse: [] },
     embeds: [
       {
@@ -121,7 +124,7 @@ export async function sendDiscordConciergeNotification(
           },
         ],
         footer: {
-          text: "DOKKIITECH Concierge",
+          text: "トリエル | DOKKIITECH",
         },
         timestamp: new Date().toISOString(),
       },
@@ -131,7 +134,6 @@ export async function sendDiscordConciergeNotification(
 
 export async function sendDiscordConciergeTextNotification(content: string) {
   return postWebhook({
-    username: "コンシェルジュ",
     content,
     allowed_mentions: { parse: [] },
   })
