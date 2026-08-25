@@ -1,10 +1,14 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { usePathname } from "next/navigation"
 
 const prompt = "dokkiitech@portfolio:~$"
 
 export function FirstVisitLoader() {
+  const pathname = usePathname()
+  // 予約者専用ページでは演出をスキップ(予約者には無関係な約7秒の待ちになるため)
+  const disabled = pathname?.startsWith("/appointment/manage/") ?? false
   const [show, setShow] = useState(false)
   const [closing, setClosing] = useState(false)
   const [visibleCount, setVisibleCount] = useState(1)
@@ -50,6 +54,7 @@ export function FirstVisitLoader() {
   )
 
   useEffect(() => {
+    if (disabled) return
     setShow(true)
     ;(window as unknown as { __DOKKII_SPLASH_ACTIVE?: boolean }).__DOKKII_SPLASH_ACTIVE = true
 
@@ -72,9 +77,9 @@ export function FirstVisitLoader() {
       clearInterval(lineTimer)
       clearTimeout(hideTimer)
     }
-  }, [logs.length])
+  }, [logs.length, disabled])
 
-  if (!show) return null
+  if (disabled || !show) return null
 
   return (
     <div
