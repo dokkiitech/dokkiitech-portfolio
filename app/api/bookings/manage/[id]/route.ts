@@ -146,8 +146,8 @@ async function hasAllDayBusyEvent(accessToken: string, calendarId: string, date:
   })
 }
 
-const UPDATE_FROM_ADDRESS = "reappointment@dokkiitech.dev"
-const CANCEL_FROM_ADDRESS = "unappointment@dokkiitech.dev"
+const UPDATE_FROM_ADDRESS = "reappointment@dokkiitech.work"
+const CANCEL_FROM_ADDRESS = "unappointment@dokkiitech.work"
 
 function formatDateJp(date: string): string {
   const [y, m, d] = date.split("-")
