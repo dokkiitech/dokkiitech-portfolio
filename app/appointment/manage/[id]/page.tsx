@@ -11,6 +11,17 @@ import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 import { BookingCompletionScreen } from "@/components/booking-completion-screen"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { CopyBookingIdButton } from "@/components/copy-booking-id-button"
 
 interface ManageRecord {
@@ -437,9 +448,30 @@ export default function ManageBookingPage() {
                       <Button onClick={onUpdate} disabled={!form.date || !form.timeSlot || actionLoading !== null}>
                         予約を変更
                       </Button>
-                      <Button variant="destructive" onClick={onCancel} disabled={actionLoading !== null}>
-                        予約をキャンセル
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" disabled={actionLoading !== null}>
+                            予約をキャンセル
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>予約をキャンセルしますか？</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {`${form.date} ${form.timeSlot} のご予約を取り消します。この操作は元に戻せません。`}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>やめておく</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={onCancel}
+                            >
+                              キャンセルする
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
