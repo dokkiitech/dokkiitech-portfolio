@@ -256,9 +256,10 @@ function formatDateJp(date: string): string {
 }
 
 function calcEndTime(timeSlot: string): string {
-  const start = new Date(`2000-01-01T${timeSlot}:00+09:00`)
-  const end = new Date(start.getTime() + SLOT_MINUTES * 60 * 1000)
-  return `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`
+  // Date#getHours() はサーバーのローカルTZ依存(Vercel は UTC)のため算術で求める
+  const [hour, minute] = timeSlot.split(":").map(Number)
+  const total = hour * 60 + minute + SLOT_MINUTES
+  return `${String(Math.floor(total / 60) % 24).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`
 }
 
 export async function GET(request: Request) {
