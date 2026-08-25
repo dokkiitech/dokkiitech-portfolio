@@ -2,6 +2,7 @@ import { createSign } from "crypto"
 import { NextResponse } from "next/server"
 import { cancelPortalBooking, updatePortalBooking, verifyPortalAccess } from "@/lib/booking-portal"
 import { sendDiscordConciergeNotification } from "@/lib/discord-concierge"
+import { sendMail } from "@/lib/mail"
 
 const DEFAULT_TIMEZONE = process.env.BOOKING_TIMEZONE || "Asia/Tokyo"
 const DEFAULT_OFFSET = process.env.BOOKING_TIMEZONE_OFFSET || "+09:00"
@@ -145,48 +146,8 @@ async function hasAllDayBusyEvent(accessToken: string, calendarId: string, date:
   })
 }
 
-const MAIL_COMMON_FOOTER_HTML = `
-<hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb;" />
-<p style="color:#4b5563;font-size:13px;line-height:1.7;">
-このメールアドレスは送信専用です。<br />
-メールでのご連絡はinfo&#64;dokkiitech.comにお願いします<br />
-SNSでのご連絡は <a href="https://www.dokkiitech.com/contact">https://www.dokkiitech.com/contact</a> からお願いします。
-</p>
-`
-
 const UPDATE_FROM_ADDRESS = "reappointment@dokkiitech.dev"
 const CANCEL_FROM_ADDRESS = "unappointment@dokkiitech.dev"
-
-async function sendResendMail(
-  to: string,
-  subject: string,
-  html: string,
-  senderName = "dokkiitech予約管理システム",
-  fromAddressOverride?: string
-) {
-  const apiKey = process.env.RESEND_API_KEY
-  const from = process.env.RESEND_FROM
-  if (!apiKey || !from) return { sent: false, reason: "RESEND_API_KEY or RESEND_FROM missing" }
-  const defaultFromAddress = from.includes("<") ? from.match(/<([^>]+)>/)?.[1] || from : from
-  const fromAddress = fromAddressOverride || defaultFromAddress
-  const fromHeader = `${senderName} <${fromAddress}>`
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: fromHeader,
-      to: [to],
-      subject,
-      html: `${html}${MAIL_COMMON_FOOTER_HTML}`,
-    }),
-  })
-  if (!response.ok) return { sent: false, reason: await response.text() }
-  return { sent: true }
-}
 
 function formatDateJp(date: string): string {
   const [y, m, d] = date.split("-")
@@ -331,7 +292,7 @@ export async function PATCH(
     const endTime = calcEndTime(nextTimeSlot)
     const salutation = `${nextCompany ? `${nextCompany} ` : ""}${checked.record.name}さま`
     const formatLine = nextBookingType === "meet" ? "Google Meet" : `対面（${nextLocation || "-"})`
-    const resend = await sendResendMail(
+    const mail = await sendMail(
       checked.record.email,
       "予約変更のお知らせ",
       `
@@ -372,7 +333,7 @@ export async function PATCH(
       ok: true,
       message: "予約情報を更新しました。",
       record: updated,
-      resend,
+      mail,
     })
   } catch (error) {
     return NextResponse.json({ ok: false, message: "予約変更に失敗しました。", error: String(error) }, { status: 500 })
@@ -425,7 +386,7 @@ export async function DELETE(
       checked.record.booking_type === "meet"
         ? "Google Meet"
         : `対面（${checked.record.location || "-"})`
-    const resend = await sendResendMail(
+    const mail = await sendMail(
       checked.record.email,
       "予約キャンセルのお知らせ",
       `
@@ -465,7 +426,7 @@ export async function DELETE(
       ok: true,
       message: "予約をキャンセルしました。",
       record: canceled,
-      resend,
+      mail,
     })
   } catch (error) {
     return NextResponse.json({ ok: false, message: "予約キャンセルに失敗しました。", error: String(error) }, { status: 500 })

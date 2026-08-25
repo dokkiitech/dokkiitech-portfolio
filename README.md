@@ -10,7 +10,7 @@ Next.js (App Router) で構築したポートフォリオサイトです。
 - ブログ連携: Zenn 投稿一覧
 - Product連携: Zenn の `product` タグ記事のみ表示
 - 予約ページ: `meet / 対面` 選択、対面時は場所必須バリデーション
-- 予約 API: Google Calendar / Meet / Resend 対応（`mock` モードあり）
+- 予約 API: Google Calendar / Meet / Amazon SES 対応（`mock` モードあり）
 - レスポンシブ対応（mobile / tablet / desktop）
 
 ## セットアップ
@@ -37,7 +37,7 @@ ZENN_FALLBACK_ARTICLES_JSON=
 
 # 予約バックエンド切替
 # mock: モック応答
-# gcp: Google Calendar + Meet + 招待 + Resend
+# gcp: Google Calendar + Meet + 招待 + SESメール
 BOOKING_BACKEND_MODE=mock
 
 # GCP連携時に必須
@@ -53,17 +53,21 @@ BOOKING_SLOT_MINUTES=60
 BOOKING_SLOT_START_HOUR=10
 BOOKING_SLOT_END_HOUR=24
 
-# Resend（予約完了メール通知）
-RESEND_API_KEY=
-RESEND_FROM=booking@your-domain.com
+# AWS（DynamoDB: 予約者専用ページ / SES: 予約メール通知）
+# インフラは dokkiitech-infra の aws/portfolio スタックで管理
+# ※ AWS_* の素の名前は Vercel の予約済み変数のため BOOKING_AWS_* を使う
+#    未設定時は SDK のデフォルトチェーン（ローカルの AWS プロファイル等）にフォールバック
+BOOKING_AWS_ACCESS_KEY_ID=
+BOOKING_AWS_SECRET_ACCESS_KEY=
+BOOKING_AWS_REGION=ap-northeast-1
+BOOKING_TABLE_NAME=portfolio-booking-portal
+MAIL_FROM=booking@your-domain.com
 
 # Discord webhook（コンシェルジュ通知）
 DISCORD_CONCIERGE_WEBHOOK_URL=
 BOOKING_ADMIN_BASE_URL=https://your-domain.com
 
-# 予約者専用ページ（Supabase）
-SUPABASE_URL=
-SUPABASE_SERVICE_ROLE_KEY=
+# 予約者専用ページ
 BOOKING_PORTAL_BASE_URL=https://your-domain.com
 
 # Vercel Cron（MTGデイリーサマリー）
@@ -77,11 +81,11 @@ CRON_SECRET=
   - `Authorization: Bearer <CRON_SECRET>` または `x-cron-secret` を受け付けます
 - `DISCORD_CONCIERGE_WEBHOOK_URL`
   - Discord の投稿先 webhook URL
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-  - `booking_portal` テーブルの当日・翌日分取得に使用
+- `BOOKING_TABLE_NAME`
+- `BOOKING_AWS_ACCESS_KEY_ID` / `BOOKING_AWS_SECRET_ACCESS_KEY`
+  - DynamoDB テーブルの当日・翌日分取得に使用
 
-Supabase に接続できない場合でも、Discord には `DBアクセス状況` セクション付きで失敗通知を送る実装です。
+DynamoDB に接続できない場合でも、Discord には `DBアクセス状況` セクション付きで失敗通知を送る実装です。
 
 ## Zenn 連携仕様
 
@@ -126,38 +130,21 @@ Supabase に接続できない場合でも、Discord には `DBアクセス状�
     - 予約時に Calendar Event 作成 + ユーザーへ招待送信
     - `meet` の場合は Meet URL 自動発行
     - `対面` の場合は `location` をイベント場所に設定
-    - Resend 設定時は予約完了メールを送信
+    - SES 設定時（`MAIL_FROM`）は予約完了メールを送信
     - Discord webhook 設定時は、コンシェルジュ名義のリッチ通知を Discord に送信
     - attendees招待を有効にするには、Google Workspace の Domain-Wide Delegation + `GOOGLE_DELEGATED_USER_EMAIL` が必要
-  - Supabase設定済みの場合は、予約後に `managePortal.url`（予約者専用ページURL）を返却
-  - Resendメール本文に `managePortal.url` とパスワードを同梱
+  - DynamoDB設定済みの場合は、予約後に `managePortal.url`（予約者専用ページURL）を返却
+  - SESメール本文に `managePortal.url` とパスワードを同梱
   - 予約者ページでの変更/キャンセルは、`gcp` モード時に Google Calendar イベントにも同期
 
-## Supabaseテーブル（booking_portal）
+## DynamoDBテーブル（portfolio-booking-portal）
 
-```sql
-create table if not exists booking_portal (
-  id uuid primary key,
-  booking_id text not null,
-  name text not null,
-  email text not null,
-  company text,
-  booking_type text not null,
-  date text not null,
-  time_slot text not null,
-  agenda text not null,
-  location text,
-  status text not null default 'active',
-  calendar_event_id text,
-  calendar_event_url text,
-  meet_url text,
-  manage_token_hash text not null,
-  manage_password_hash text,
-  expires_at timestamptz not null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-```
+- 定義は dokkiitech-infra の `aws/portfolio/dynamodb.tf`（PAY_PER_REQUEST、PK `id`、GSI `booking_id-index`）
+- レコードの属性は Supabase 時代の `booking_portal` テーブルと同じスネークケース
+  （`id` / `booking_id` / `name` / `email` / `company` / `booking_type` / `date` / `time_slot` / `agenda` /
+  `location` / `status` / `calendar_event_id` / `calendar_event_url` / `meet_url` / `manage_token_hash` /
+  `manage_password_hash` / `expires_at` / `created_at` / `updated_at`）
+- 旧 Supabase からのデータ移行: `node scripts/migrate-supabase-to-dynamodb.mjs`（冪等）
 
 ## Vercel デプロイ手順
 

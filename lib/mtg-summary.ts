@@ -62,8 +62,8 @@ function truncateField(value: string, max = 1000) {
 }
 
 function resolveEmbedColor(status: string) {
-  if (status === "Supabase 取得成功") return 0x22c55e
-  if (status === "Supabase 未照会") return 0xf59e0b
+  if (status === "DynamoDB 取得成功") return 0x22c55e
+  if (status === "DynamoDB 未照会") return 0xf59e0b
   return 0xef4444
 }
 
@@ -77,24 +77,24 @@ export async function runMtgSummary() {
 
   let todayMeetings: BookingPortalRecord[] = []
   let tomorrowMeetings: BookingPortalRecord[] = []
-  let dbStatus = "Supabase 未照会"
-  let dbDetail = "Supabase の環境変数が未設定、または照会前に失敗しました。"
+  let dbStatus = "DynamoDB 未照会"
+  let dbDetail = "DynamoDB の環境変数が未設定、または照会前に失敗しました。"
 
   try {
     ;[todayMeetings, tomorrowMeetings] = await Promise.all([fetchMeetings(today), fetchMeetings(tomorrow)])
-    dbStatus = "Supabase 取得成功"
+    dbStatus = "DynamoDB 取得成功"
     dbDetail = `today=${todayMeetings.length}件 / tomorrow=${tomorrowMeetings.length}件`
   } catch (error) {
     if (error instanceof Error) {
-      if (error.message.includes("Supabase env missing")) {
-        dbStatus = "Supabase 未照会"
+      if (error.message.includes("DynamoDB env missing")) {
+        dbStatus = "DynamoDB 未照会"
         dbDetail = error.message
       } else {
-        dbStatus = "Supabase 取得失敗"
+        dbStatus = "DynamoDB 取得失敗"
         dbDetail = error.message
       }
     } else {
-      dbStatus = "Supabase 取得失敗"
+      dbStatus = "DynamoDB 取得失敗"
       dbDetail = "不明なエラーが発生しました。"
     }
   }

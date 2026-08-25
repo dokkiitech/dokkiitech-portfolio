@@ -1,4 +1,14 @@
 import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "crypto"
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
+import {
+  DynamoDBDocumentClient,
+  GetCommand,
+  PutCommand,
+  QueryCommand,
+  ScanCommand,
+  UpdateCommand,
+} from "@aws-sdk/lib-dynamodb"
+import { awsClientConfig } from "@/lib/aws"
 
 export type BookingPortalStatus = "active" | "canceled" | "expired"
 
@@ -50,19 +60,24 @@ interface PortalAccess {
   record?: BookingPortalRecord
 }
 
-function getSupabaseEnv() {
-  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_SECRET_KEY ||
-    process.env.SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !serviceKey) {
-    throw new Error(
-      "Supabase env missing: set SUPABASE_URL(or NEXT_PUBLIC_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY"
-    )
+let docClient: DynamoDBDocumentClient | null = null
+
+function getTableName(): string {
+  const tableName = process.env.BOOKING_TABLE_NAME
+  if (!tableName) {
+    throw new Error("DynamoDB env missing: set BOOKING_TABLE_NAME")
   }
-  return { url, serviceKey }
+  return tableName
+}
+
+function getDocClient(): DynamoDBDocumentClient {
+  if (!docClient) {
+    const client = new DynamoDBClient(awsClientConfig())
+    docClient = DynamoDBDocumentClient.from(client, {
+      marshallOptions: { removeUndefinedValues: true },
+    })
+  }
+  return docClient
 }
 
 function hashToken(token: string): string {
@@ -82,26 +97,13 @@ function verifyPassword(password: string, hashed: string): boolean {
   return timingSafeEqual(Buffer.from(saved, "hex"), Buffer.from(generated, "hex"))
 }
 
-async function supabaseFetch(path: string, init?: RequestInit) {
-  const { url, serviceKey } = getSupabaseEnv()
-  return fetch(`${url}/rest/v1/${path}`, {
-    ...init,
-    headers: {
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-      "Content-Type": "application/json",
-      Prefer: "return=representation",
-      ...(init?.headers || {}),
-    },
-  })
-}
-
 export async function createBookingPortal(input: CreatePortalInput) {
   const token = randomBytes(24).toString("hex")
   const initialPassword = randomBytes(6).toString("base64url")
   const id = randomUUID()
   const expiresAt = `${input.date}T23:59:59+09:00`
-  const payload = {
+  const now = new Date().toISOString()
+  const record: BookingPortalRecord = {
     id,
     booking_id: input.bookingId,
     name: input.name,
@@ -119,31 +121,43 @@ export async function createBookingPortal(input: CreatePortalInput) {
     manage_token_hash: hashToken(token),
     manage_password_hash: hashPassword(initialPassword),
     expires_at: expiresAt,
+    created_at: now,
+    updated_at: now,
   }
 
-  const response = await supabaseFetch("booking_portal", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  })
-  if (!response.ok) throw new Error(`Failed to create booking portal: ${await response.text()}`)
+  try {
+    await getDocClient().send(
+      new PutCommand({
+        TableName: getTableName(),
+        Item: record,
+        ConditionExpression: "attribute_not_exists(id)",
+      })
+    )
+  } catch (error) {
+    throw new Error(`Failed to create booking portal: ${String(error)}`)
+  }
 
   return { id, token, expiresAt, initialPassword }
 }
 
 async function getPortalRecord(id: string): Promise<BookingPortalRecord | null> {
-  const response = await supabaseFetch(`booking_portal?id=eq.${encodeURIComponent(id)}&select=*`)
-  if (!response.ok) throw new Error(`Failed to fetch booking portal: ${await response.text()}`)
-  const rows = (await response.json()) as BookingPortalRecord[]
-  return rows[0] || null
+  const result = await getDocClient().send(
+    new GetCommand({ TableName: getTableName(), Key: { id } })
+  )
+  return (result.Item as BookingPortalRecord | undefined) || null
 }
 
 async function bookingIdExists(bookingId: string): Promise<boolean> {
-  const response = await supabaseFetch(
-    `booking_portal?booking_id=eq.${encodeURIComponent(bookingId)}&select=id&limit=1`
+  const result = await getDocClient().send(
+    new QueryCommand({
+      TableName: getTableName(),
+      IndexName: "booking_id-index",
+      KeyConditionExpression: "booking_id = :booking_id",
+      ExpressionAttributeValues: { ":booking_id": bookingId },
+      Limit: 1,
+    })
   )
-  if (!response.ok) throw new Error(`Failed to check booking id: ${await response.text()}`)
-  const rows = (await response.json()) as Array<Pick<BookingPortalRecord, "id">>
-  return rows.length > 0
+  return (result.Items || []).length > 0
 }
 
 export async function generateBookingReference(): Promise<string> {
@@ -154,7 +168,7 @@ export async function generateBookingReference(): Promise<string> {
         return candidate
       }
     } catch (error) {
-      if (error instanceof Error && error.message.includes("Supabase env missing")) {
+      if (error instanceof Error && error.message.includes("DynamoDB env missing")) {
         return candidate
       }
       throw error
@@ -165,22 +179,48 @@ export async function generateBookingReference(): Promise<string> {
 }
 
 export async function listBookingPortals(filters: ListBookingPortalsFilters = {}): Promise<BookingPortalRecord[]> {
-  const params = new URLSearchParams({
-    select: "*",
-    order: "date.desc,time_slot.desc,created_at.desc",
-  })
+  const conditions: string[] = []
+  const names: Record<string, string> = {}
+  const values: Record<string, string> = {}
 
   if (filters.date) {
-    params.set("date", `eq.${filters.date}`)
+    conditions.push("#date = :date")
+    names["#date"] = "date"
+    values[":date"] = filters.date
   }
 
   if (filters.status && filters.status !== "all") {
-    params.set("status", `eq.${filters.status}`)
+    conditions.push("#status = :status")
+    names["#status"] = "status"
+    values[":status"] = filters.status
   }
 
-  const response = await supabaseFetch(`booking_portal?${params.toString()}`)
-  if (!response.ok) throw new Error(`Failed to list booking portals: ${await response.text()}`)
-  return (await response.json()) as BookingPortalRecord[]
+  const records: BookingPortalRecord[] = []
+  let lastEvaluatedKey: Record<string, unknown> | undefined
+  do {
+    const result = await getDocClient().send(
+      new ScanCommand({
+        TableName: getTableName(),
+        ...(conditions.length > 0
+          ? {
+              FilterExpression: conditions.join(" AND "),
+              ExpressionAttributeNames: names,
+              ExpressionAttributeValues: values,
+            }
+          : {}),
+        ExclusiveStartKey: lastEvaluatedKey,
+      })
+    )
+    records.push(...((result.Items as BookingPortalRecord[]) || []))
+    lastEvaluatedKey = result.LastEvaluatedKey
+  } while (lastEvaluatedKey)
+
+  return records.sort(
+    (a, b) =>
+      b.date.localeCompare(a.date) ||
+      b.time_slot.localeCompare(a.time_slot) ||
+      b.created_at.localeCompare(a.created_at)
+  )
 }
 
 export async function verifyPortalAccess(id: string, token: string, password?: string): Promise<PortalAccess> {
@@ -198,21 +238,44 @@ export async function verifyPortalAccess(id: string, token: string, password?: s
   return { ok: true, record }
 }
 
+async function updatePortalFields(
+  id: string,
+  fields: Record<string, string | null>
+): Promise<BookingPortalRecord> {
+  const entries = Object.entries({ ...fields, updated_at: new Date().toISOString() })
+  const names: Record<string, string> = {}
+  const values: Record<string, string | null> = {}
+  const sets = entries.map(([key, value], idx) => {
+    names[`#f${idx}`] = key
+    values[`:v${idx}`] = value
+    return `#f${idx} = :v${idx}`
+  })
+
+  const result = await getDocClient().send(
+    new UpdateCommand({
+      TableName: getTableName(),
+      Key: { id },
+      UpdateExpression: `SET ${sets.join(", ")}`,
+      ConditionExpression: "attribute_exists(id)",
+      ExpressionAttributeNames: names,
+      ExpressionAttributeValues: values,
+      ReturnValues: "ALL_NEW",
+    })
+  )
+  return result.Attributes as BookingPortalRecord
+}
+
 export async function setPortalPassword(id: string, token: string, password: string): Promise<PortalAccess> {
   const checked = await verifyPortalAccess(id, token)
   if (!checked.ok || !checked.record) return checked
   if (checked.record.manage_password_hash) return { ok: false, reason: "パスワードは既に設定されています。" }
 
-  const response = await supabaseFetch(`booking_portal?id=eq.${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    body: JSON.stringify({
-      manage_password_hash: hashPassword(password),
-      updated_at: new Date().toISOString(),
-    }),
-  })
-  if (!response.ok) return { ok: false, reason: "パスワードの保存に失敗しました。" }
-  const rows = (await response.json()) as BookingPortalRecord[]
-  return { ok: true, record: rows[0] }
+  try {
+    const record = await updatePortalFields(id, { manage_password_hash: hashPassword(password) })
+    return { ok: true, record }
+  } catch {
+    return { ok: false, reason: "パスワードの保存に失敗しました。" }
+  }
 }
 
 export async function updatePortalBooking(
@@ -224,27 +287,17 @@ export async function updatePortalBooking(
     >
   >
 ) {
-  const response = await supabaseFetch(`booking_portal?id=eq.${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    body: JSON.stringify({
-      ...patch,
-      updated_at: new Date().toISOString(),
-    }),
-  })
-  if (!response.ok) throw new Error(`Failed to update booking portal: ${await response.text()}`)
-  const rows = (await response.json()) as BookingPortalRecord[]
-  return rows[0]
+  try {
+    return await updatePortalFields(id, patch as Record<string, string | null>)
+  } catch (error) {
+    throw new Error(`Failed to update booking portal: ${String(error)}`)
+  }
 }
 
 export async function cancelPortalBooking(id: string) {
-  const response = await supabaseFetch(`booking_portal?id=eq.${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    body: JSON.stringify({
-      status: "canceled",
-      updated_at: new Date().toISOString(),
-    }),
-  })
-  if (!response.ok) throw new Error(`Failed to cancel booking portal: ${await response.text()}`)
-  const rows = (await response.json()) as BookingPortalRecord[]
-  return rows[0]
+  try {
+    return await updatePortalFields(id, { status: "canceled" })
+  } catch (error) {
+    throw new Error(`Failed to cancel booking portal: ${String(error)}`)
+  }
 }

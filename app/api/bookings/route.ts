@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { bookingSchema } from "@/lib/booking"
 import { createBookingPortal, generateBookingReference } from "@/lib/booking-portal"
 import { sendDiscordConciergeNotification } from "@/lib/discord-concierge"
+import { sendMail } from "@/lib/mail"
 
 export const runtime = "nodejs"
 
@@ -249,42 +250,6 @@ async function listAvailableSlots(accessToken: string, calendarId: string, date:
   })
 }
 
-const MAIL_COMMON_FOOTER_HTML = `
-<hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb;" />
-<p style="color:#4b5563;font-size:13px;line-height:1.7;">
-このメールアドレスは送信専用です。<br />
-メールでのご連絡はinfo&#64;dokkiitech.comにお願いします<br />
-SNSでのご連絡は <a href="https://www.dokkiitech.com/contact">https://www.dokkiitech.com/contact</a> からお願いします。
-</p>
-`
-
-async function sendResendMail(to: string, subject: string, html: string) {
-  const apiKey = process.env.RESEND_API_KEY
-  const from = process.env.RESEND_FROM
-  if (!apiKey || !from) return { sent: false, reason: "RESEND_API_KEY or RESEND_FROM missing" }
-  const fromHeader = from.includes("<") ? from : `dokkiitech予約管理システム <${from}>`
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: fromHeader,
-      to: [to],
-      subject,
-      html: `${html}${MAIL_COMMON_FOOTER_HTML}`,
-    }),
-  })
-
-  if (!response.ok) {
-    return { sent: false, reason: await response.text() }
-  }
-
-  return { sent: true }
-}
-
 function formatDateJp(date: string): string {
   const [y, m, d] = date.split("-")
   return `${y}年${m}月${d}日`
@@ -444,7 +409,7 @@ export async function POST(request: Request) {
             "GOOGLE_SERVICE_ACCOUNT_EMAIL",
             "GOOGLE_PRIVATE_KEY",
           ],
-          optionalEnvForGcpMode: ["RESEND_API_KEY", "RESEND_FROM"],
+          optionalEnvForGcpMode: ["MAIL_FROM", "BOOKING_TABLE_NAME", "BOOKING_AWS_ACCESS_KEY_ID", "BOOKING_AWS_SECRET_ACCESS_KEY"],
         },
         managePortal: portal
           ? {
@@ -549,7 +514,7 @@ export async function POST(request: Request) {
     const endTime = calcEndTime(payload.timeSlot)
     const salutation = `${payload.company ? `${payload.company} ` : ""}${payload.name}さま`
     const formatLine = payload.bookingType === "meet" ? "Google Meet" : `対面（${payload.location || "-"})`
-    const mailResult = await sendResendMail(
+    const mailResult = await sendMail(
       payload.email,
       "予約完了のお知らせ",
       `
@@ -599,7 +564,7 @@ export async function POST(request: Request) {
       calendarEventUrl: event.htmlLink,
       meetUrl: event.hangoutLink,
       location: event.location,
-      resend: mailResult,
+      mail: mailResult,
       managePortal: portal
         ? {
             id: portal.id,
