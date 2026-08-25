@@ -418,7 +418,9 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
                     `  初期パスワード: ${json.managePortal.initialPassword}`,
                   ]
                 : []),
-              "確認メールをお送りしました。届かない場合は迷惑メールもご確認ください。",
+              json.mail?.sent
+                ? "確認メールをお送りしました。届かない場合は迷惑メールもご確認ください。"
+                : "※この環境ではメールは送信されていません。",
             ],
             sessionId
           )
