@@ -53,18 +53,8 @@ function buildSection(title: string, records: BookingPortalRecord[]) {
   return `${title}\n${lines.join("\n")}`
 }
 
-function formatDbStatusLine(status: string, detail?: string) {
-  return detail ? `${status}\n${detail}` : status
-}
-
 function truncateField(value: string, max = 1000) {
   return value.length > max ? `${value.slice(0, max - 1)}…` : value
-}
-
-function resolveEmbedColor(status: string) {
-  if (status === "DynamoDB 取得成功") return 0x22c55e
-  if (status === "DynamoDB 未照会") return 0xf59e0b
-  return 0xef4444
 }
 
 async function fetchMeetings(date: string) {
@@ -77,41 +67,45 @@ export async function runMtgSummary() {
 
   let todayMeetings: BookingPortalRecord[] = []
   let tomorrowMeetings: BookingPortalRecord[] = []
-  let dbStatus = "DynamoDB 未照会"
-  let dbDetail = "DynamoDB の環境変数が未設定、または照会前に失敗しました。"
 
   try {
     ;[todayMeetings, tomorrowMeetings] = await Promise.all([fetchMeetings(today), fetchMeetings(tomorrow)])
-    dbStatus = "DynamoDB 取得成功"
-    dbDetail = `today=${todayMeetings.length}件 / tomorrow=${tomorrowMeetings.length}件`
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes("DynamoDB env missing")) {
-        dbStatus = "DynamoDB 未照会"
-        dbDetail = error.message
-      } else {
-        dbStatus = "DynamoDB 取得失敗"
-        dbDetail = error.message
-      }
-    } else {
-      dbStatus = "DynamoDB 取得失敗"
-      dbDetail = "不明なエラーが発生しました。"
+    // 取得失敗は Discord に流さず cron のレスポンス(500)で検知する
+    return {
+      ok: false,
+      message: "予約の取得に失敗しました。",
+      today,
+      tomorrow,
+      detail: error instanceof Error ? error.message : String(error),
+    }
+  }
+
+  // 今日・明日ともに予約が無い日は通知しない
+  if (todayMeetings.length === 0 && tomorrowMeetings.length === 0) {
+    return {
+      ok: true,
+      skipped: true,
+      message: "今日・明日の予約が0件のため通知をスキップしました。",
+      today,
+      tomorrow,
+      todayCount: 0,
+      tomorrowCount: 0,
     }
   }
 
   const todaySection = buildSection("今日のMTG", todayMeetings)
   const tomorrowSection = buildSection("明日のMTG", tomorrowMeetings)
-  const dbSection = formatDbStatusLine(dbStatus, dbDetail)
 
+  // 名前・アイコンは Discord 側の webhook 設定を使うため username は指定しない
   const notifyResult = await sendDiscordConciergePayloadNotification({
-    username: "コンシェルジュ",
-    content: "本日の MTG デイリーサマリーです。",
+    content: "おはよう、わがこよ。きょうの よていを おしらせ しますね。",
     allowed_mentions: { parse: [] },
     embeds: [
       {
-        title: "MTGデイリーサマリー",
+        title: "きょうと あしたの MTG ですよ",
         description: `対象日: ${today} / ${tomorrow}`,
-        color: resolveEmbedColor(dbStatus),
+        color: 0xc4b5fd,
         fields: [
           {
             name: `今日のMTG (${todayMeetings.length}件)`,
@@ -123,14 +117,9 @@ export async function runMtgSummary() {
             value: truncateField(tomorrowSection.replace(/^明日のMTG\n/, "")),
             inline: false,
           },
-          {
-            name: "DBアクセス状況",
-            value: truncateField(dbSection),
-            inline: false,
-          },
         ],
         footer: {
-          text: "DOKKIITECH Concierge",
+          text: "トリエル | DOKKIITECH",
         },
         timestamp: new Date().toISOString(),
       },
@@ -142,7 +131,6 @@ export async function runMtgSummary() {
     message: notifyResult.sent ? "MTG サマリーを送信しました。" : "Discord への送信に失敗しました。",
     today,
     tomorrow,
-    dbStatus,
     detail: notifyResult.sent ? undefined : notifyResult.reason,
     todayCount: todayMeetings.length,
     tomorrowCount: tomorrowMeetings.length,

@@ -85,7 +85,7 @@ CRON_SECRET=
 - `BOOKING_AWS_ACCESS_KEY_ID` / `BOOKING_AWS_SECRET_ACCESS_KEY`
   - DynamoDB テーブルの当日・翌日分取得に使用
 
-DynamoDB に接続できない場合でも、Discord には `DBアクセス状況` セクション付きで失敗通知を送る実装です。
+サマリーは今日・明日のどちらかに予約がある場合のみ送信します（0件の日はスキップ）。DynamoDB への接続に失敗した場合は Discord へは送らず、cron のレスポンス（500）で検知します。
 
 ## Zenn 連携仕様
 
@@ -131,7 +131,7 @@ DynamoDB に接続できない場合でも、Discord には `DBアクセス状�
     - `meet` の場合は Meet URL 自動発行
     - `対面` の場合は `location` をイベント場所に設定
     - SES 設定時（`MAIL_FROM`）は予約完了メールを送信
-    - Discord webhook 設定時は、コンシェルジュ名義のリッチ通知を Discord に送信
+    - Discord webhook 設定時は、リッチ通知を Discord に送信（名前・アイコンは webhook 側の設定を使用）
     - attendees招待を有効にするには、Google Workspace の Domain-Wide Delegation + `GOOGLE_DELEGATED_USER_EMAIL` が必要
   - DynamoDB設定済みの場合は、予約後に `managePortal.url`（予約者専用ページURL）を返却
   - SESメール本文に `managePortal.url` とパスワードを同梱
