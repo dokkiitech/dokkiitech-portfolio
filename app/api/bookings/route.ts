@@ -409,7 +409,7 @@ export async function POST(request: Request) {
             "GOOGLE_SERVICE_ACCOUNT_EMAIL",
             "GOOGLE_PRIVATE_KEY",
           ],
-          optionalEnvForGcpMode: ["MAIL_FROM", "BOOKING_TABLE_NAME", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+          optionalEnvForGcpMode: ["MAIL_FROM", "BOOKING_TABLE_NAME", "BOOKING_AWS_ACCESS_KEY_ID", "BOOKING_AWS_SECRET_ACCESS_KEY"],
         },
         managePortal: portal
           ? {

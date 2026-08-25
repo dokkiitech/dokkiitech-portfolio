@@ -8,6 +8,7 @@ import {
   ScanCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb"
+import { awsClientConfig } from "@/lib/aws"
 
 export type BookingPortalStatus = "active" | "canceled" | "expired"
 
@@ -71,7 +72,7 @@ function getTableName(): string {
 
 function getDocClient(): DynamoDBDocumentClient {
   if (!docClient) {
-    const client = new DynamoDBClient({ region: process.env.AWS_REGION || "ap-northeast-1" })
+    const client = new DynamoDBClient(awsClientConfig())
     docClient = DynamoDBDocumentClient.from(client, {
       marshallOptions: { removeUndefinedValues: true },
     })

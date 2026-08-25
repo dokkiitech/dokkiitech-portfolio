@@ -1,4 +1,5 @@
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2"
+import { awsClientConfig } from "@/lib/aws"
 
 const MAIL_COMMON_FOOTER_HTML = `
 <hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb;" />
@@ -13,7 +14,7 @@ let client: SESv2Client | null = null
 
 function getClient(): SESv2Client {
   if (!client) {
-    client = new SESv2Client({ region: process.env.AWS_REGION || "ap-northeast-1" })
+    client = new SESv2Client(awsClientConfig())
   }
   return client
 }

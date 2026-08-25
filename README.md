@@ -55,9 +55,11 @@ BOOKING_SLOT_END_HOUR=24
 
 # AWS（DynamoDB: 予約者専用ページ / SES: 予約メール通知）
 # インフラは dokkiitech-infra の aws/portfolio スタックで管理
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_REGION=ap-northeast-1
+# ※ AWS_* の素の名前は Vercel の予約済み変数のため BOOKING_AWS_* を使う
+#    未設定時は SDK のデフォルトチェーン（ローカルの AWS プロファイル等）にフォールバック
+BOOKING_AWS_ACCESS_KEY_ID=
+BOOKING_AWS_SECRET_ACCESS_KEY=
+BOOKING_AWS_REGION=ap-northeast-1
 BOOKING_TABLE_NAME=portfolio-booking-portal
 MAIL_FROM=booking@your-domain.com
 
@@ -80,7 +82,7 @@ CRON_SECRET=
 - `DISCORD_CONCIERGE_WEBHOOK_URL`
   - Discord の投稿先 webhook URL
 - `BOOKING_TABLE_NAME`
-- `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`
+- `BOOKING_AWS_ACCESS_KEY_ID` / `BOOKING_AWS_SECRET_ACCESS_KEY`
   - DynamoDB テーブルの当日・翌日分取得に使用
 
 DynamoDB に接続できない場合でも、Discord には `DBアクセス状況` セクション付きで失敗通知を送る実装です。
