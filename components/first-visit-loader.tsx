@@ -7,8 +7,9 @@ const prompt = "dokkiitech@portfolio:~$"
 
 export function FirstVisitLoader() {
   const pathname = usePathname()
-  // 予約者専用ページでは演出をスキップ(予約者には無関係な約7秒の待ちになるため)
-  const disabled = pathname?.startsWith("/appointment/manage/") ?? false
+  // 予約者専用ページ・管理画面では演出をスキップ(実務ページでは約7秒の待ちが邪魔なため)
+  const disabled =
+    (pathname?.startsWith("/appointment/manage/") || pathname?.startsWith("/appointment/admin")) ?? false
   const [show, setShow] = useState(false)
   const [closing, setClosing] = useState(false)
   const [visibleCount, setVisibleCount] = useState(1)
