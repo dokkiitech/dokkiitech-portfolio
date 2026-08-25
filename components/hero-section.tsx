@@ -74,7 +74,7 @@ export function HeroSection() {
               className="rounded-full px-8 py-6 text-lg border-2 hover:bg-muted/50 transition-all duration-300"
               asChild
             >
-              <Link href="/about">詳しく見る</Link>
+              <Link href="/profile">詳しく見る</Link>
             </Button>
           </div>
         </div>
