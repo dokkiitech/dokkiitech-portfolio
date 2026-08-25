@@ -82,6 +82,12 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
   const lineIdRef = useRef(0)
   const typingSessionRef = useRef(0)
   const terminalInputRef = useRef<HTMLInputElement | null>(null)
+  const terminalBottomRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (mode !== "terminal") return
+    terminalBottomRef.current?.scrollIntoView({ block: "nearest" })
+  }, [history, mode])
 
   const commandMap = useMemo(
     () => ({
@@ -320,15 +326,20 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
           [
             `空き時間 (${raw}):`,
             ...result.slots.map((slot, idx) => `  [${idx + 1}] ${slot}`),
-            "番号か時刻（例: 15:00）で選択してください。",
+            "時刻（例: 15:00 または 15）か一覧の番号で選択してください。",
           ],
           sessionId
         )
         return
       }
       case "slot": {
-        const byIndex = /^\d{1,2}$/.test(raw) ? flow.slots[Number(raw) - 1] : undefined
-        const slot = byIndex || (flow.slots.includes(raw) ? raw : undefined)
+        // 「14」のような入力は 14:00 の時刻指定を優先し、該当スロットが無ければ一覧の番号として扱う
+        const asTime = /^\d{1,2}$/.test(raw) ? `${raw.padStart(2, "0")}:00` : raw
+        const slot = flow.slots.includes(asTime)
+          ? asTime
+          : /^\d{1,2}$/.test(raw)
+            ? flow.slots[Number(raw) - 1]
+            : undefined
         if (!slot) {
           await typeLines(["その時間は選択できません。一覧の番号か時刻で入力してください。"], sessionId)
           return
@@ -587,6 +598,8 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
                       return
                     }
                     if (e.key === "Enter") {
+                      // IME 変換確定の Enter をコマンド実行として拾わない
+                      if (e.nativeEvent.isComposing || e.keyCode === 229) return
                       void execute()
                       return
                     }
@@ -601,6 +614,7 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
                   }
                 />
               </label>
+              <div ref={terminalBottomRef} />
             </div>
           </section>
         ) : (
