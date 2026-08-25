@@ -39,7 +39,7 @@ const bookingPlaceholders: Record<BookingFlowState["step"], string> = {
   company: "会社名を入力（なければ - ）",
   type: "meet または 対面",
   location: "場所を入力",
-  date: "YYYY-MM-DD",
+  date: "例: 2026-09-01 / 2026/9/1 / 9/1",
   slot: "番号 または HH:MM",
   agenda: "相談内容を入力",
   confirm: "y / n",
@@ -71,6 +71,41 @@ const rootCommands = ["help", "ls", "profile", "blog", "product", "contact", "ap
 const cdTargets = ["home", "profile", "blog", "products", "contact", "appointment"] as const
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// 多様な日付表記(2026-09-01 / 2026/9/1 / 20260901 / 2026年9月1日 / 9/1 など)を YYYY-MM-DD に正規化
+function normalizeDateInput(raw: string): string | null {
+  const s = raw.trim().replace(/年|月/g, "-").replace(/日/g, "").replace(/[./]/g, "-").replace(/-+$/, "")
+
+  let year: number
+  let month: number
+  let day: number
+
+  if (/^\d{8}$/.test(s)) {
+    year = Number(s.slice(0, 4))
+    month = Number(s.slice(4, 6))
+    day = Number(s.slice(6, 8))
+  } else {
+    const full = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+    const short = s.match(/^(\d{1,2})-(\d{1,2})$/)
+    if (full) {
+      year = Number(full[1])
+      month = Number(full[2])
+      day = Number(full[3])
+    } else if (short) {
+      year = new Date().getFullYear()
+      month = Number(short[1])
+      day = Number(short[2])
+    } else {
+      return null
+    }
+  }
+
+  const dt = new Date(Date.UTC(year, month - 1, day))
+  if (dt.getUTCFullYear() !== year || dt.getUTCMonth() !== month - 1 || dt.getUTCDate() !== day) {
+    return null
+  }
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+}
 
 export function PortfolioExperience({ blogArticles, productArticles, focusStack }: PortfolioExperienceProps) {
   const router = useRouter()
@@ -297,22 +332,23 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
           await typeLines(["対面の場所を入力してください。"], sessionId)
         } else {
           setBookingFlow({ ...flow, step: "date", bookingType })
-          await typeLines(["希望日を入力してください。（例: 2026-09-01）"], sessionId)
+          await typeLines(["希望日を入力してください。（例: 2026-09-01 / 2026/9/1 / 9/1）"], sessionId)
         }
         return
       }
       case "location": {
         setBookingFlow({ ...flow, step: "date", location: raw })
-        await typeLines(["希望日を入力してください。（例: 2026-09-01）※対面は2日前から予約可能です", ], sessionId)
+        await typeLines(["希望日を入力してください。（例: 2026-09-01 / 2026/9/1 / 9/1）※対面は2日前から予約可能です"], sessionId)
         return
       }
       case "date": {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-          await typeLines(["YYYY-MM-DD の形式で入力してください。（例: 2026-09-01）"], sessionId)
+        const normalizedDate = normalizeDateInput(raw)
+        if (!normalizedDate) {
+          await typeLines(["日付として解釈できません。（例: 2026-09-01 / 2026/9/1 / 20260901）"], sessionId)
           return
         }
         await typeLines([`空き時間を確認しています...`], sessionId)
-        const result = await fetchSlotsForDate(raw, flow.bookingType)
+        const result = await fetchSlotsForDate(normalizedDate, flow.bookingType)
         if (!result.ok) {
           await typeLines([result.message, "別の日付を入力してください。"], sessionId)
           return
@@ -321,10 +357,10 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
           await typeLines([result.notice || "この日は空きがありません。", "別の日付を入力してください。"], sessionId)
           return
         }
-        setBookingFlow({ ...flow, step: "slot", date: raw, slots: result.slots })
+        setBookingFlow({ ...flow, step: "slot", date: normalizedDate, slots: result.slots })
         await typeLines(
           [
-            `空き時間 (${raw}):`,
+            `空き時間 (${normalizedDate}):`,
             ...result.slots.map((slot, idx) => `  [${idx + 1}] ${slot}`),
             "時刻（例: 15:00 または 15）か一覧の番号で選択してください。",
           ],
