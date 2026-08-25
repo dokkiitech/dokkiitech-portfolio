@@ -20,6 +20,32 @@ interface TerminalLine {
   text: string
 }
 
+interface BookingFlowState {
+  step: "name" | "email" | "company" | "type" | "location" | "date" | "slot" | "agenda" | "confirm" | "submitting"
+  name: string
+  email: string
+  company: string
+  bookingType: "meet" | "対面"
+  location: string
+  date: string
+  timeSlot: string
+  agenda: string
+  slots: string[]
+}
+
+const bookingPlaceholders: Record<BookingFlowState["step"], string> = {
+  name: "お名前を入力",
+  email: "メールアドレスを入力",
+  company: "会社名を入力（なければ - ）",
+  type: "meet または 対面",
+  location: "場所を入力",
+  date: "例: 2026-09-01 / 2026/9/1 / 9/1",
+  slot: "番号 または HH:MM",
+  agenda: "相談内容を入力",
+  confirm: "y / n",
+  submitting: "送信中...",
+}
+
 const prompt = "dokkiitech@portfolio:~$"
 const snsLinks = [
   { label: "X", href: "https://x.com/dokkiitech" },
@@ -41,10 +67,51 @@ const pageMap: Record<string, string> = {
   sns: "/contact",
   contact: "/contact",
 }
-const rootCommands = ["help", "ls", "profile", "blog", "product", "contact", "appointment", "clear", "cd"] as const
+const rootCommands = ["help", "ls", "profile", "blog", "product", "contact", "appointment", "book", "clear", "cd"] as const
 const cdTargets = ["home", "profile", "blog", "products", "contact", "appointment"] as const
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// 多様な日付表記(2026-09-01 / 2026/9/1 / 20260901 / 2026年9月1日 / 9/1 など)を YYYY-MM-DD に正規化
+function normalizeDateInput(raw: string): string | null {
+  const s = raw.trim().replace(/年|月/g, "-").replace(/日/g, "").replace(/[./]/g, "-").replace(/-+$/, "")
+
+  let year: number
+  let month: number
+  let day: number
+
+  if (/^\d{8}$/.test(s)) {
+    year = Number(s.slice(0, 4))
+    month = Number(s.slice(4, 6))
+    day = Number(s.slice(6, 8))
+  } else if (/^\d{3,4}$/.test(s)) {
+    // MDD / MMDD(年省略、今年扱い)。"2026" のような年単独は月の妥当性チェックで弾かれる
+    const monthLen = s.length - 2
+    year = new Date().getFullYear()
+    month = Number(s.slice(0, monthLen))
+    day = Number(s.slice(monthLen))
+  } else {
+    const full = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+    const short = s.match(/^(\d{1,2})-(\d{1,2})$/)
+    if (full) {
+      year = Number(full[1])
+      month = Number(full[2])
+      day = Number(full[3])
+    } else if (short) {
+      year = new Date().getFullYear()
+      month = Number(short[1])
+      day = Number(short[2])
+    } else {
+      return null
+    }
+  }
+
+  const dt = new Date(Date.UTC(year, month - 1, day))
+  if (dt.getUTCFullYear() !== year || dt.getUTCMonth() !== month - 1 || dt.getUTCDate() !== day) {
+    return null
+  }
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+}
 
 export function PortfolioExperience({ blogArticles, productArticles, focusStack }: PortfolioExperienceProps) {
   const router = useRouter()
@@ -52,13 +119,23 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
   const [history, setHistory] = useState<TerminalLine[]>([])
   const [command, setCommand] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const [bookingFlow, setBookingFlow] = useState<BookingFlowState | null>(null)
   const lineIdRef = useRef(0)
   const typingSessionRef = useRef(0)
   const terminalInputRef = useRef<HTMLInputElement | null>(null)
+  const terminalBottomRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (mode !== "terminal") return
+    terminalBottomRef.current?.scrollIntoView({ block: "nearest" })
+  }, [history, mode])
 
   const commandMap = useMemo(
     () => ({
-      help: ["利用可能: help, ls, profile, blog, product, contact, appointment, cd <page>, clear"],
+      help: [
+        "利用可能: help, ls, profile, blog, product, contact, appointment, book, cd <page>, clear",
+        "book: ターミナルから対話式で打ち合わせを予約できます。",
+      ],
       ls: [
         "/home /profile /blog /products /contact /appointment",
       ],
@@ -100,8 +177,8 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
       product: productArticles.slice(0, 3).map((item) => `- ${item.title}`),
       sns: snsLinks.map((item) => `- ${item.label}: ${item.href}`),
       contact: snsLinks.map((item) => `- ${item.label}: ${item.href}`),
-      booking: ["予約ページ: /appointment", "cd booking で移動できます。"],
-      appointment: ["予約ページ: /appointment", "cd appointment で移動できます。"],
+      booking: ["予約ページ: /appointment", "cd booking で移動、book でこのままターミナルから予約できます。"],
+      appointment: ["予約ページ: /appointment", "cd appointment で移動、book でこのままターミナルから予約できます。"],
     }),
     [blogArticles, productArticles, focusStack]
   )
@@ -190,6 +267,216 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
     router.push(path)
   }
 
+  const startBookingFlow = async (sessionId: number) => {
+    setBookingFlow({
+      step: "name",
+      name: "",
+      email: "",
+      company: "",
+      bookingType: "meet",
+      location: "",
+      date: "",
+      timeSlot: "",
+      agenda: "",
+      slots: [],
+    })
+    await typeLines(
+      [
+        "対話式の予約を開始します。cancel と入力するといつでも中断できます。",
+        "お名前を入力してください。",
+      ],
+      sessionId
+    )
+  }
+
+  const fetchSlotsForDate = async (date: string, bookingType: "meet" | "対面") => {
+    const response = await fetch(`/api/bookings?date=${date}&bookingType=${encodeURIComponent(bookingType)}`)
+    const json = await response.json()
+    if (!response.ok || !json.ok) {
+      return { ok: false as const, message: (json.message as string) || "空き時間の取得に失敗しました。" }
+    }
+    const notice = (json.leadTimeMessage || json.allDayBusyMessage) as string | undefined
+    return { ok: true as const, slots: (json.slots as string[]) || [], notice }
+  }
+
+  const handleBookingInput = async (raw: string, flow: BookingFlowState, sessionId: number) => {
+    if (raw.toLowerCase() === "cancel") {
+      setBookingFlow(null)
+      await typeLines(["予約を中断しました。また book でいつでも再開できます。"], sessionId)
+      return
+    }
+
+    switch (flow.step) {
+      case "name": {
+        setBookingFlow({ ...flow, step: "email", name: raw })
+        await typeLines(["メールアドレスを入力してください。"], sessionId)
+        return
+      }
+      case "email": {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) {
+          await typeLines(["メールアドレスの形式が不正です。もう一度入力してください。"], sessionId)
+          return
+        }
+        setBookingFlow({ ...flow, step: "company", email: raw })
+        await typeLines(["会社名を入力してください。（個人の場合は - を入力）"], sessionId)
+        return
+      }
+      case "company": {
+        setBookingFlow({ ...flow, step: "type", company: raw === "-" ? "" : raw })
+        await typeLines(["予約タイプを入力してください。（meet または 対面）"], sessionId)
+        return
+      }
+      case "type": {
+        const lower = raw.toLowerCase()
+        if (lower !== "meet" && raw !== "対面") {
+          await typeLines(["meet か 対面 のどちらかを入力してください。"], sessionId)
+          return
+        }
+        const bookingType = lower === "meet" ? ("meet" as const) : ("対面" as const)
+        if (bookingType === "対面") {
+          setBookingFlow({ ...flow, step: "location", bookingType })
+          await typeLines(["対面の場所を入力してください。"], sessionId)
+        } else {
+          setBookingFlow({ ...flow, step: "date", bookingType })
+          await typeLines(["希望日を入力してください。（例: 2026-09-01 / 2026/9/1 / 9/1）"], sessionId)
+        }
+        return
+      }
+      case "location": {
+        setBookingFlow({ ...flow, step: "date", location: raw })
+        await typeLines(["希望日を入力してください。（例: 2026-09-01 / 2026/9/1 / 9/1）※対面は2日前から予約可能です"], sessionId)
+        return
+      }
+      case "date": {
+        const normalizedDate = normalizeDateInput(raw)
+        if (!normalizedDate) {
+          await typeLines(["日付として解釈できません。（例: 2026-09-01 / 2026/9/1 / 20260901）"], sessionId)
+          return
+        }
+        await typeLines([`空き時間を確認しています...`], sessionId)
+        const result = await fetchSlotsForDate(normalizedDate, flow.bookingType)
+        if (!result.ok) {
+          await typeLines([result.message, "別の日付を入力してください。"], sessionId)
+          return
+        }
+        if (result.notice || result.slots.length === 0) {
+          await typeLines([result.notice || "この日は空きがありません。", "別の日付を入力してください。"], sessionId)
+          return
+        }
+        setBookingFlow({ ...flow, step: "slot", date: normalizedDate, slots: result.slots })
+        await typeLines(
+          [
+            `空き時間 (${normalizedDate}):`,
+            ...result.slots.map((slot, idx) => `  [${idx + 1}] ${slot}`),
+            "時刻（例: 15:00 または 15）か一覧の番号で選択してください。",
+          ],
+          sessionId
+        )
+        return
+      }
+      case "slot": {
+        // 「14」のような入力は 14:00 の時刻指定を優先し、該当スロットが無ければ一覧の番号として扱う
+        const asTime = /^\d{1,2}$/.test(raw) ? `${raw.padStart(2, "0")}:00` : raw
+        const slot = flow.slots.includes(asTime)
+          ? asTime
+          : /^\d{1,2}$/.test(raw)
+            ? flow.slots[Number(raw) - 1]
+            : undefined
+        if (!slot) {
+          await typeLines(["その時間は選択できません。一覧の番号か時刻で入力してください。"], sessionId)
+          return
+        }
+        setBookingFlow({ ...flow, step: "agenda", timeSlot: slot })
+        await typeLines(["相談内容を入力してください。"], sessionId)
+        return
+      }
+      case "agenda": {
+        const next = { ...flow, step: "confirm" as const, agenda: raw }
+        setBookingFlow(next)
+        await typeLines(
+          [
+            "以下の内容で予約します。",
+            `  お名前   : ${next.name}`,
+            `  メール   : ${next.email}`,
+            `  会社名   : ${next.company || "-"}`,
+            `  形式     : ${next.bookingType === "meet" ? "Google Meet" : `対面（${next.location}）`}`,
+            `  日時     : ${next.date} ${next.timeSlot}`,
+            `  相談内容 : ${next.agenda}`,
+            "よろしければ y、やり直す場合は n を入力してください。",
+          ],
+          sessionId
+        )
+        return
+      }
+      case "confirm": {
+        const lower = raw.toLowerCase()
+        if (lower === "n" || lower === "no") {
+          setBookingFlow(null)
+          await typeLines(["予約を中断しました。また book でいつでも再開できます。"], sessionId)
+          return
+        }
+        if (lower !== "y" && lower !== "yes") {
+          await typeLines(["y か n を入力してください。"], sessionId)
+          return
+        }
+        setBookingFlow({ ...flow, step: "submitting" })
+        await typeLines(["予約を送信しています..."], sessionId)
+        try {
+          const response = await fetch("/api/bookings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: flow.name,
+              email: flow.email,
+              company: flow.company || undefined,
+              bookingType: flow.bookingType,
+              date: flow.date,
+              timeSlot: flow.timeSlot,
+              agenda: flow.agenda,
+              location: flow.location || undefined,
+            }),
+          })
+          const json = await response.json()
+          if (!response.ok || !json.ok) {
+            setBookingFlow(null)
+            await typeLines(
+              [
+                (json.message as string) || "予約に失敗しました。",
+                "book でもう一度やり直せます。",
+              ],
+              sessionId
+            )
+            return
+          }
+          setBookingFlow(null)
+          await typeLines(
+            [
+              "予約が完了しました🎉",
+              `  予約番号: ${json.bookingId}`,
+              ...(json.meetUrl ? [`  Meet URL: ${json.meetUrl}`] : []),
+              ...(json.managePortal
+                ? [
+                    `  予約者専用ページ: ${json.managePortal.url}`,
+                    `  初期パスワード: ${json.managePortal.initialPassword}`,
+                  ]
+                : []),
+              json.mail?.sent
+                ? "確認メールをお送りしました。届かない場合は迷惑メールもご確認ください。"
+                : "※この環境ではメールは送信されていません。",
+            ],
+            sessionId
+          )
+        } catch (error) {
+          setBookingFlow(null)
+          await typeLines([`予約の送信に失敗しました: ${String(error)}`, "book でもう一度やり直せます。"], sessionId)
+        }
+        return
+      }
+      case "submitting":
+        return
+    }
+  }
+
   const execute = async () => {
     const raw = command.trim()
     const lower = raw.toLowerCase()
@@ -199,6 +486,12 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
     typingSessionRef.current = sessionId
     pushLine("command", `${prompt} ${raw}`)
 
+    if (bookingFlow) {
+      setCommand("")
+      await handleBookingInput(raw, bookingFlow, sessionId)
+      return
+    }
+
     if (lower === "clear") {
       setHistory([])
       setCommand("")
@@ -206,6 +499,11 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
     }
 
     setCommand("")
+
+    if (lower === "book") {
+      await startBookingFlow(sessionId)
+      return
+    }
 
     if (lower === "cd") {
       await typeLines(["usage: cd <page>", "例: cd /blog  または cd appointment"], sessionId)
@@ -326,11 +624,15 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
                   value={command}
                   onChange={(e) => setCommand(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.ctrlKey && e.key.toLowerCase() === "c" && isTyping) {
+                    if (e.ctrlKey && e.key.toLowerCase() === "c" && (isTyping || bookingFlow)) {
                       e.preventDefault()
                       typingSessionRef.current = Date.now()
                       setIsTyping(false)
                       pushLine("output", "^C")
+                      if (bookingFlow) {
+                        setBookingFlow(null)
+                        pushLine("output", "予約を中断しました。また book でいつでも再開できます。")
+                      }
                       return
                     }
                     if (e.ctrlKey && e.key.toLowerCase() === "l") {
@@ -340,6 +642,8 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
                       return
                     }
                     if (e.key === "Enter") {
+                      // IME 変換確定の Enter をコマンド実行として拾わない
+                      if (e.nativeEvent.isComposing || e.keyCode === 229) return
                       void execute()
                       return
                     }
@@ -349,9 +653,12 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
                     }
                   }}
                   className="w-full bg-transparent text-base text-foreground outline-none md:text-sm"
-                  placeholder={isTyping ? "出力中..." : "例: cd /blog"}
+                  placeholder={
+                    bookingFlow ? bookingPlaceholders[bookingFlow.step] : isTyping ? "出力中..." : "例: cd /blog"
+                  }
                 />
               </label>
+              <div ref={terminalBottomRef} />
             </div>
           </section>
         ) : (
