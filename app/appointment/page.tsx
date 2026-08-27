@@ -89,6 +89,9 @@ const STEP_FIELDS: Record<StepId, (keyof BookingInput)[]> = {
   confirm: [],
 }
 
+// 選択したことが見えるように、自動で次へ進むまで少しだけ待つ
+const AUTO_ADVANCE_DELAY_MS = 220
+
 // 送信時にバリデーションで弾かれたら、そのフィールドを持つステップまで戻す
 const FIELD_STEP_INDEX: Partial<Record<keyof BookingInput, number>> = {
   bookingType: 0,
@@ -164,10 +167,33 @@ export default function AppointPage() {
   const isLastStep = stepIndex === STEPS.length - 1
 
   const contentRef = useRef<HTMLDivElement>(null)
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0 })
   }, [stepIndex])
+
+  useEffect(
+    () => () => {
+      if (advanceTimer.current) clearTimeout(advanceTimer.current)
+    },
+    []
+  )
+
+  // ラジオをキーボードの矢印キーで移動したときにもブラウザは click を発火させるため、
+  // 実際のクリック / タップ（detail >= 1）だけを自動送りの対象にする。
+  // キーボード操作の人は「次へ」で進めるので、一覧を見て回る操作を妨げない。
+  const isPointerClick = (event: { detail: number }) => event.detail > 0
+
+  // 選択肢をクリック / タップしたら次のステップへ自動的に進む
+  const scheduleAdvance = useCallback((fromIndex: number) => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current)
+    advanceTimer.current = setTimeout(() => {
+      advanceTimer.current = null
+      // 待っている間に「戻る」「次へ」で移動していた場合は何もしない
+      setStepIndex((prev) => (prev === fromIndex ? Math.min(prev + 1, STEPS.length - 1) : prev))
+    }, AUTO_ADVANCE_DELAY_MS)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -405,6 +431,12 @@ export default function AppointPage() {
                         return (
                           <label
                             key={option.value}
+                            onClick={(event) => {
+                              // 対面は場所の入力が続くため自動では進めない
+                              if (option.value !== "meet" || !isPointerClick(event)) return
+                              clearErrors("location")
+                              scheduleAdvance(stepIndex)
+                            }}
                             className={cn(
                               "flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
                               checked ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
@@ -456,6 +488,7 @@ export default function AppointPage() {
                         setSelectedDate(date)
                         setValue("timeSlot", "")
                         setValue("date", date ? format(date, "yyyy-MM-dd") : "", { shouldValidate: true })
+                        if (date) scheduleAdvance(stepIndex)
                       }}
                       locale={ja}
                       disabled={(date) => {
@@ -499,6 +532,9 @@ export default function AppointPage() {
                           return (
                             <label
                               key={slot}
+                              onClick={(event) => {
+                                if (isPointerClick(event)) scheduleAdvance(stepIndex)
+                              }}
                               className={cn(
                                 "flex cursor-pointer items-center justify-center rounded-md border px-2 py-3 text-sm transition-colors",
                                 checked ? "border-primary bg-primary/10 font-medium" : "border-border hover:border-primary/50"
