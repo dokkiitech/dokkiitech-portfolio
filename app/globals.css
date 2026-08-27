@@ -73,6 +73,46 @@
       transform: translateY(0);
     }
   }
+
+  /* 予約ページのステップ切り替え用（1ステップずつ画面を差し替える際の遷移） */
+  .animate-fade-in-step {
+    animation: fadeInStep 0.25s ease-out;
+  }
+
+  @keyframes fadeInStep {
+    from {
+      opacity: 0;
+      transform: translateX(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-in-step {
+      animation: none;
+    }
+  }
+}
+
+/* 予約ページ: 画面が低い環境でもカレンダーごと1画面に収める */
+@media (max-height: 780px) {
+  .booking-calendar {
+    padding: 0.25rem;
+  }
+
+  .booking-calendar thead th,
+  .booking-calendar tbody td,
+  .booking-calendar tbody td > button {
+    height: 2rem;
+    width: 2rem;
+  }
+
+  .booking-calendar tbody tr {
+    margin-top: 0.125rem;
+  }
 }
 
 .line-clamp-2 {
