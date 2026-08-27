@@ -386,7 +386,9 @@ export default function AppointPage() {
           <div ref={contentRef} className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
             <div key={step.id} className="animate-fade-in-step">
               <h2 className="text-lg font-semibold">{step.heading}</h2>
-              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{step.description}</p>
+              <p className="mt-1 text-xs text-muted-foreground sm:text-sm [@media(max-height:680px)]:hidden">
+                {step.description}
+              </p>
 
               <div className="mt-4">
                 {step.id === "type" && (
