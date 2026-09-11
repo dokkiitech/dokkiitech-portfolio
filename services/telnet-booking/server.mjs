@@ -6,6 +6,14 @@ import { TelnetDecoder, isValidEmail, normalizeDateInput, sanitizeInput, selectS
 
 const CRLF = "\r\n"
 const MAX_LINE_LENGTH = 2_000
+const DOKKIITECH_SYMBOL_ART = [
+  "██████╗  ██████╗ ██╗  ██╗██╗  ██╗██╗██╗████████╗███████╗ ██████╗██╗  ██╗",
+  "██╔══██╗██╔═══██╗██║ ██╔╝██║ ██╔╝██║██║╚══██╔══╝██╔════╝██╔════╝██║  ██║",
+  "██║  ██║██║   ██║█████╔╝ █████╔╝ ██║██║   ██║   █████╗  ██║     ███████║",
+  "██║  ██║██║   ██║██╔═██╗ ██╔═██╗ ██║██║   ██║   ██╔══╝  ██║     ██╔══██║",
+  "██████╔╝╚██████╔╝██║  ██╗██║  ██╗██║██║   ██║   ███████╗╚██████╗██║  ██║",
+  "╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝",
+].join("\n")
 
 function numberFromEnv(name, fallback) {
   const value = Number(process.env[name])
@@ -30,6 +38,8 @@ class BookingSession {
 
   start() {
     this.write(
+      "",
+      DOKKIITECH_SYMBOL_ART,
       "",
       "DOKKIITECH MEETING RESERVATION",
       "================================",
@@ -258,18 +268,25 @@ export function createTelnetBookingServer({
   bookingClient = new BookingClient(),
   idleTimeoutMs = numberFromEnv("TELNET_IDLE_TIMEOUT_MS", 300_000),
   maxConnections = numberFromEnv("TELNET_MAX_CONNECTIONS", 25),
+  maxConnectionsPerIp = numberFromEnv("TELNET_MAX_CONNECTIONS_PER_IP", 2),
   rateLimitConnections = numberFromEnv("TELNET_RATE_LIMIT_CONNECTIONS", 10),
   rateLimitWindowMs = numberFromEnv("TELNET_RATE_LIMIT_WINDOW_MS", 900_000),
 } = {}) {
   const recentConnections = new Map()
+  const activeConnectionsByAddress = new Map()
   let activeConnections = 0
 
   const server = net.createServer((socket) => {
     const address = socket.remoteAddress || "unknown"
     const now = Date.now()
     const recent = (recentConnections.get(address) || []).filter((time) => now - time < rateLimitWindowMs)
+    const activeForAddress = activeConnectionsByAddress.get(address) || 0
 
-    if (activeConnections >= maxConnections || recent.length >= rateLimitConnections) {
+    if (
+      activeConnections >= maxConnections ||
+      activeForAddress >= maxConnectionsPerIp ||
+      recent.length >= rateLimitConnections
+    ) {
       socket.end(formatOutput(["現在混み合っています。しばらくしてからお試しください。"]))
       return
     }
@@ -277,6 +294,7 @@ export function createTelnetBookingServer({
     recent.push(now)
     recentConnections.set(address, recent)
     activeConnections += 1
+    activeConnectionsByAddress.set(address, activeForAddress + 1)
 
     const session = new BookingSession(socket, bookingClient)
     const telnetDecoder = new TelnetDecoder()
@@ -316,6 +334,9 @@ export function createTelnetBookingServer({
     socket.on("error", () => {})
     socket.on("close", () => {
       activeConnections = Math.max(0, activeConnections - 1)
+      const remainingForAddress = (activeConnectionsByAddress.get(address) || 1) - 1
+      if (remainingForAddress <= 0) activeConnectionsByAddress.delete(address)
+      else activeConnectionsByAddress.set(address, remainingForAddress)
     })
   })
 

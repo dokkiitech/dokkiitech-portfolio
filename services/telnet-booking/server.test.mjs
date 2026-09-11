@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { once } from "node:events"
 import net from "node:net"
 import test from "node:test"
 import { createTelnetBookingServer } from "./server.mjs"
@@ -12,6 +13,16 @@ function listen(server) {
 
 function close(server) {
   return new Promise((resolve) => server.close(resolve))
+}
+
+function waitForClose(socket, message) {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error(message)), 2_000)
+    socket.once("close", () => {
+      clearTimeout(timeout)
+      resolve()
+    })
+  })
 }
 
 test("Telnet gateway completes an interactive booking through the existing API contract", async () => {
@@ -56,6 +67,7 @@ test("Telnet gateway completes an interactive booking through the existing API c
 
   try {
     await waitFor("dokkiitech> ")
+    assert.match(transcript, /██████╗  ██████╗.*██╗  ██╗/)
     await enter("book", "お名前")
     await enter("山田太郎", "メールアドレス")
     await enter("taro@example.com", "会社名")
@@ -79,6 +91,70 @@ test("Telnet gateway completes an interactive booking through the existing API c
     assert.equal(transcript.includes("secret"), false)
   } finally {
     socket.destroy()
+    await close(server)
+  }
+})
+
+test("Telnet gateway limits concurrent connections from one IP", async () => {
+  const server = createTelnetBookingServer({
+    idleTimeoutMs: 5_000,
+    maxConnections: 5,
+    maxConnectionsPerIp: 1,
+    rateLimitConnections: 100,
+  })
+  const port = await listen(server)
+  const first = net.createConnection({ host: "127.0.0.1", port })
+  first.setEncoding("utf8")
+  let firstTranscript = ""
+  first.on("data", (chunk) => {
+    firstTranscript += chunk
+  })
+  await once(first, "data")
+
+  const second = net.createConnection({ host: "127.0.0.1", port })
+  second.setEncoding("utf8")
+  let secondTranscript = ""
+  second.on("data", (chunk) => {
+    secondTranscript += chunk
+  })
+
+  try {
+    await waitForClose(second, "Timed out waiting for rejection")
+    assert.match(firstTranscript, /DOKKIITECH MEETING RESERVATION/)
+    assert.match(secondTranscript, /現在混み合っています/)
+  } finally {
+    first.destroy()
+    second.destroy()
+    await close(server)
+  }
+})
+
+test("Telnet gateway rate limits repeated connections from one IP", async () => {
+  const server = createTelnetBookingServer({
+    idleTimeoutMs: 5_000,
+    maxConnections: 5,
+    maxConnectionsPerIp: 2,
+    rateLimitConnections: 1,
+    rateLimitWindowMs: 5_000,
+  })
+  const port = await listen(server)
+  const first = net.createConnection({ host: "127.0.0.1", port })
+  await once(first, "connect")
+  first.destroy()
+  await once(first, "close")
+
+  const second = net.createConnection({ host: "127.0.0.1", port })
+  second.setEncoding("utf8")
+  let transcript = ""
+  second.on("data", (chunk) => {
+    transcript += chunk
+  })
+
+  try {
+    await waitForClose(second, "Timed out waiting for rate limit")
+    assert.match(transcript, /現在混み合っています/)
+  } finally {
+    second.destroy()
     await close(server)
   }
 })
