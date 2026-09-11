@@ -16,8 +16,54 @@ Next.js (App Router) で構築したポートフォリオサイトです。
 ## セットアップ
 
 ```bash
+nvm use
 pnpm install
 pnpm dev
+```
+
+## Telnet 予約ゲートウェイ
+
+既存の予約 API を利用する対話式 TCP サーバーです。空き時間の照会から予約確定までを Telnet クライアントで操作できます。
+
+```bash
+BOOKING_API_BASE_URL=https://www.dokkiitech.com pnpm telnet:booking
+telnet localhost 2323
+```
+
+接続後に `book` を入力すると予約を開始します。`cancel` で入力途中の予約を中断し、`quit` で切断します。
+
+### 環境変数
+
+```bash
+BOOKING_API_BASE_URL=https://www.dokkiitech.com
+TELNET_HOST=0.0.0.0
+TELNET_PORT=2323
+TELNET_IDLE_TIMEOUT_MS=300000
+TELNET_MAX_CONNECTIONS=25
+TELNET_RATE_LIMIT_CONNECTIONS=10
+TELNET_RATE_LIMIT_WINDOW_MS=900000
+TELNET_API_TIMEOUT_MS=15000
+```
+
+- `BOOKING_API_BASE_URL` は原則 HTTPS の URL を指定します。ローカルホスト以外の HTTP を明示的に許可する場合のみ `TELNET_ALLOW_INSECURE_API=true` を設定します。
+- インターネットへ公開する場合は TCP `2323` をゲートウェイの実行ホストへ転送し、必要な送信元だけをファイアウォールで許可してください。
+- Telnet は通信を暗号化しません。氏名・メールアドレス・相談内容が平文で流れるため、信頼できないネットワークでの利用には向きません。予約管理 URL、初期パスワード、Meet URL は Telnet 画面へ表示せず確認メールだけに送ります。
+
+PM2 で常駐させる場合:
+
+```bash
+BOOKING_API_BASE_URL=https://www.dokkiitech.com \
+  pm2 start services/telnet-booking/ecosystem.config.cjs --update-env
+pm2 save
+```
+
+コンテナで起動する場合:
+
+```bash
+docker build -f services/telnet-booking/Dockerfile -t portfolio-telnet-booking .
+docker run --rm -p 2323:2323 \
+  -e BOOKING_API_BASE_URL=https://www.dokkiitech.com \
+  portfolio-telnet-booking
 ```
 
 ## 環境変数
@@ -195,6 +241,7 @@ Supabase の env 不足やクエリ失敗時も、`DBアクセス状況` に `Su
 ## 検証コマンド
 
 ```bash
+pnpm test:telnet
 pnpm lint
 pnpm build
 ```
