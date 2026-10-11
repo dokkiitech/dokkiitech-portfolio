@@ -1,3 +1,51 @@
+# デザイン刷新: ターミナルを軸にしたデザインシステムへの統一
+
+## 現状の課題（調査結果）
+
+- **ブランド色がバラバラ**: ターミナル=emerald、UIモード=cyan、ナビ/Contact=blue→purple グラデ、primary=blue。サイトとして一貫した印象が無い
+- **ライトモードで文字が読めない**: UIモードのタグ・予約ボタンが `text-cyan-100`、見出しラベルが `text-cyan-300`、リンクが `text-sky-300`、モード切替が `text-emerald-100` → 白背景でほぼ不可視
+- **日本語フォント未指定**: Inter は和文グリフを持たずOS依存のフォールバック。等幅フォントも未指定
+- **ページごとにヘッダーの作りが違う**: blog/products=中央寄せ+丸アイコン、contact=グラデ文字、profile=カード内見出し
+- **a11y**: テーマ切替に aria-label 無し、ナビに aria-current 無し、モード切替が aria-pressed 無し
+- **導線**: プライバシーポリシーへのリンクがどこにも無い（フッター無し）。非エンジニアがターミナルで何を打てばいいか分からない
+- Contact の Mail 行に `@dokkiitech` と表示される（誤表記）
+
+## 方針
+
+ターミナルのアイデンティティ（emerald × 等幅）をサイト全体のデザイン言語にする。
+「モノスペースのアイブロウ（`$ cd /blog`）＋ 和文サンセリフの本文」で統一。
+
+## タスク
+
+- [x] デザイントークン: primary/ring を emerald 系に、ダーク背景をニュートラルなほぼ黒に、フォント変数（Noto Sans JP + JetBrains Mono）
+- [x] 共通 `PageHeader`（mono アイブロウ + h1 + 説明）を作り blog/products/profile/contact/privacy に適用
+- [x] ナビ: ロゴを `~/dokkiitech` のターミナル風に、active 表示を下線/ドットに、aria-current、テーマ切替 aria-label、モバイルメニュー整理
+- [x] ホーム（Terminal）: ウィンドウのタイトルバー化、モード切替をラベル付きセグメントに、クイックコマンドのチップ（タップで実行）、ブロックカーソル
+- [x] ホーム（UI）: ライトモード不可視バグ修正、セクション見出し統一、SNS にアイコン、予約 CTA を Button に
+- [x] BlogCard: 16:9 サムネ、lazy 読み込み、hover を枠色変化に（scale 廃止）、日付を mono
+- [x] Profile: 所属団体をリスト化、スキルバーを primary 色に、SNS 行を整理
+- [x] Contact: グラデ廃止、Mail 行の誤表記修正、予約への CTA
+- [x] サイトフッター（ターミナル/予約画面以外）: リンク + プライバシーポリシー + ©
+- [x] prefers-reduced-motion 対応、focus-visible
+
+## 検証
+
+- [x] `pnpm lint` / `pnpm build`
+- [x] dev サーバーで全ページをライト/ダーク × デスクトップ/モバイル幅でスクショ確認
+- [x] 予約ページ（primary 色変更の波及）が崩れていないこと
+- [ ] Redmine: 12時以降にチケット起票・稼働記録・PR番号紐付け（EC2 停止時間帯のため後追い）
+
+## レビュー（2026-10-12）
+
+- 実装: 上記すべて対応。追加で、ASCII ロゴの崩れ対策（Web フォントのサブセットに罫線文字が無いため `.font-ascii` で OS 等幅に固定）、
+  JSX 改行由来の和文中の半角スペース除去、ホームに sr-only の h1 を追加
+- SNS/ナビ定義は `lib/site.ts` に集約（Contact で Zenn が抜けていた・Mail に @dokkiitech と出ていた問題を同時解消）
+- 検証: `pnpm lint` エラー0（警告は既存のみ）/ `pnpm build` 成功 / ヘッドレス Chrome で全7ページ × 390px・1440px × light/dark を確認、
+  横はみ出し0・コンソールエラー0 / ターミナルのチップ実行（book→cancel）とキーボード実行（ls）の動作確認
+- 既存の `tsc` エラー（lib/zenn.ts 等、今回未変更）は `ignoreBuildErrors` で従来通り。今回の変更ファイルには型エラー無し
+
+---
+
 # AWS移管: Supabase→DynamoDB / Resend→SES（Redmine #112）
 
 ## 設計判断

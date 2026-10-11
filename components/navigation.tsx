@@ -1,108 +1,142 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Menu, X } from "lucide-react"
+import { navigationItems } from "@/lib/site"
+import { cn } from "@/lib/utils"
+import { CalendarClock, Menu, X } from "lucide-react"
 
-const navigation = [
-  { name: "ホーム", href: "/" },
-  { name: "プロフィール", href: "/profile" },
-  { name: "ブログ", href: "/blog" },
-  { name: "Product", href: "/products" },
-  { name: "SNS", href: "/contact" },
-  { name: "お打ち合わせの予約", href: "/appointment" },
-]
+const bookingItem = navigationItems.find((item) => item.href === "/appointment")!
+const pageItems = navigationItems.filter((item) => item !== bookingItem)
+
+const isActive = (pathname: string | null, href: string) =>
+  href === "/" ? pathname === "/" : (pathname?.startsWith(href) ?? false)
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
 
+  // ページ遷移したらモバイルメニューを閉じる
+  useEffect(() => {
+    setIsOpen(false)
+  }, [pathname])
+
+  // メニュー表示中は背面のスクロールを止め、Esc で閉じられるようにする
+  useEffect(() => {
+    if (!isOpen) return
+    const { overflow } = document.body.style
+    document.body.style.overflow = "hidden"
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsOpen(false)
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => {
+      document.body.style.overflow = overflow
+      window.removeEventListener("keydown", onKeyDown)
+    }
+  }, [isOpen])
+
   return (
     <>
-      <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            {/* ロゴ */}
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-                {"<>"}
-              </span>
-              <span className="font-bold text-lg">dokkiitech.com</span>
-            </Link>
+      <nav className="fixed top-0 z-50 w-full border-b border-border/70 bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+          <Link href="/" className="group flex items-center font-mono text-[15px] font-semibold tracking-tight" aria-label="DOKKIITECH ホーム">
+            <span className="text-primary">~/</span>
+            <span>dokkiitech</span>
+            <span aria-hidden className="ml-1 inline-block h-4 w-2 translate-y-px bg-primary animate-caret" />
+          </Link>
 
-            {/* デスクトップナビゲーション */}
-            <div className="hidden md:flex items-center space-x-1">
-              {navigation.map((item) => (
-                <Button
-                  key={item.name}
-                  variant={pathname === item.href ? "default" : "ghost"}
-                  className="rounded-full"
-                  asChild
-                >
-                  <Link href={item.href}>{item.name}</Link>
-                </Button>
-              ))}
-            </div>
+          <ul className="hidden items-center gap-1 md:flex">
+            {pageItems.map((item) => {
+              const active = isActive(pathname, item.href)
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "relative rounded-md px-3 py-2 text-sm transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      active ? "font-medium text-foreground" : "text-muted-foreground"
+                    )}
+                  >
+                    {item.name}
+                    {active && <span aria-hidden className="absolute inset-x-3 -bottom-[13px] h-0.5 rounded-full bg-primary" />}
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
 
-            {/* 右側のボタン */}
-            <div className="flex items-center space-x-2">
-              <ThemeToggle />
-
-              {/* モバイルメニューボタン */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20 transition-all duration-300 hover:scale-105"
-                onClick={() => setIsOpen(!isOpen)}
-                aria-label={isOpen ? "メニューを閉じる" : "メニューを開く"}
-              >
-                {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
-            </div>
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle />
+            <Button asChild size="sm" className="hidden rounded-full px-4 md:inline-flex">
+              <Link href={bookingItem.href} aria-current={isActive(pathname, bookingItem.href) ? "page" : undefined}>
+                <CalendarClock />
+                予約する
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full md:hidden"
+              onClick={() => setIsOpen((open) => !open)}
+              aria-label={isOpen ? "メニューを閉じる" : "メニューを開く"}
+              aria-expanded={isOpen}
+              aria-controls="mobile-menu"
+            >
+              {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
           </div>
         </div>
       </nav>
 
-      {/* フルスクリーンモバイルメニュー */}
+      {/* モバイルメニュー: ターミナルの ls 出力風に番号付きで並べる */}
       <div
-        className={`fixed inset-0 z-40 md:hidden transition-all duration-300 ease-in-out ${
-          isOpen ? "opacity-100 visible" : "opacity-0 invisible"
-        }`}
+        id="mobile-menu"
+        className={cn(
+          "fixed inset-0 z-40 bg-background/95 pt-16 backdrop-blur-xl transition-opacity duration-200 md:hidden",
+          isOpen ? "visible opacity-100" : "invisible opacity-0"
+        )}
+        aria-hidden={!isOpen}
       >
-        {/* 背景オーバーレイ */}
-        <div className="absolute inset-0 bg-background/95 backdrop-blur-lg" onClick={() => setIsOpen(false)} />
-
-        {/* メニューコンテンツ */}
-        <div className="relative flex flex-col items-center justify-center h-full px-8">
-
-          {/* ナビゲーションリンク */}
-          <div className="flex flex-col items-center space-y-6">
-            {navigation.map((item, index) => (
-              <div
-                key={item.name}
-                className={`transition-all duration-500 ${
-                  isOpen ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-                }`}
-                style={{
-                  transitionDelay: `${index * 100}ms`,
-                }}
-              >
-                <Button
-                  variant={pathname === item.href ? "default" : "ghost"}
-                  size="lg"
-                  className="text-2xl py-6 px-8 rounded-full min-w-[200px] bg-gradient-to-r from-blue-500/5 to-purple-500/5 hover:from-blue-500/20 hover:to-purple-500/20 transition-all duration-300 hover:scale-105"
-                  asChild
-                  onClick={() => setIsOpen(false)}
+        <div className="flex h-full flex-col px-6 pb-10 pt-8">
+          <p className="font-mono text-xs text-muted-foreground">
+            <span className="text-primary">dokkiitech@portfolio</span>:~$ ls
+          </p>
+          <ul className="mt-4 space-y-1">
+            {pageItems.map((item, index) => {
+              const active = isActive(pathname, item.href)
+              return (
+                <li
+                  key={item.href}
+                  className={cn("transition-all duration-300", isOpen ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0")}
+                  style={{ transitionDelay: isOpen ? `${index * 40}ms` : "0ms" }}
                 >
-                  <Link href={item.href}>{item.name}</Link>
-                </Button>
-              </div>
-            ))}
-          </div>
-
+                  <Link
+                    href={item.href}
+                    tabIndex={isOpen ? undefined : -1}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "flex items-baseline gap-4 rounded-lg px-2 py-3 text-2xl font-semibold transition-colors",
+                      active ? "text-primary" : "text-foreground hover:text-primary"
+                    )}
+                  >
+                    <span className="w-6 font-mono text-xs font-normal text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
+                    {item.name}
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+          <Button asChild size="lg" className="mt-auto h-12 rounded-full text-base" tabIndex={isOpen ? undefined : -1}>
+            <Link href={bookingItem.href}>
+              <CalendarClock />
+              {bookingItem.name}
+            </Link>
+          </Button>
         </div>
       </div>
     </>

@@ -3,8 +3,13 @@
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { ArrowRight, ArrowUpRight, CalendarClock, LayoutGrid, SquareTerminal } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { SectionLabel } from "@/components/section-label"
 import type { ZennArticle } from "@/lib/zenn"
 import type { FocusStackItem } from "@/lib/github"
+import { isExternalHref, socialLinks } from "@/lib/site"
+import { cn } from "@/lib/utils"
 
 type Mode = "terminal" | "ui"
 
@@ -47,13 +52,9 @@ const bookingPlaceholders: Record<BookingFlowState["step"], string> = {
 }
 
 const prompt = "dokkiitech@portfolio:~$"
-const snsLinks = [
-  { label: "X", href: "https://x.com/dokkiitech" },
-  { label: "Instagram", href: "https://instagram.com/dokkiitech" },
-  { label: "GitHub", href: "https://github.com/dokkiitech" },
-  { label: "Zenn", href: "https://zenn.dev/dokkiitech" },
-  { label: "Email", href: "mailto:info@dokkiitech.com" },
-]
+// 非エンジニアでもタップだけで触れるよう、よく使うコマンドをチップで出す
+const quickCommands = ["help", "profile", "blog", "product", "contact", "book"] as const
+const profileTags = ["Next.js", "TypeScript", "Go", "Docker", "AWS", "Security"]
 
 const pageMap: Record<string, string> = {
   home: "/",
@@ -175,8 +176,8 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
       ],
       blog: blogArticles.slice(0, 3).map((item) => `- ${item.title}`),
       product: productArticles.slice(0, 3).map((item) => `- ${item.title}`),
-      sns: snsLinks.map((item) => `- ${item.label}: ${item.href}`),
-      contact: snsLinks.map((item) => `- ${item.label}: ${item.href}`),
+      sns: socialLinks.map((item) => `- ${item.label}: ${item.href}`),
+      contact: socialLinks.map((item) => `- ${item.label}: ${item.href}`),
       booking: ["予約ページ: /appointment", "cd booking で移動、book でこのままターミナルから予約できます。"],
       appointment: ["予約ページ: /appointment", "cd appointment で移動、book でこのままターミナルから予約できます。"],
     }),
@@ -477,8 +478,8 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
     }
   }
 
-  const execute = async () => {
-    const raw = command.trim()
+  const execute = async (input: string = command) => {
+    const raw = input.trim()
     const lower = raw.toLowerCase()
     if (!raw || isTyping) return
 
@@ -560,65 +561,71 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
     }
   }
 
+
+  const runQuickCommand = (value: string) => {
+    if (isTyping) return
+    setCommand("")
+    void execute(value)
+    terminalInputRef.current?.focus({ preventScroll: true })
+  }
+
+  const formatDate = (value: string) =>
+    new Intl.DateTimeFormat("ja-JP", { year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value))
+
   return (
-    <main
-      className={
-        mode === "terminal"
-          ? "min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white text-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-black dark:text-slate-100"
-          : "min-h-screen bg-background text-foreground"
-      }
-    >
-      <section
-        className={
-          mode === "terminal"
-            ? "min-h-[calc(100vh-4rem)] w-full px-0 pb-0 pt-4"
-            : "mx-auto max-w-6xl px-4 pb-20 pt-24"
-        }
-      >
-        {mode === "terminal" ? (
-          <section
-            className="min-h-[calc(100vh-11rem)] w-full rounded-none border-y border-border/40 bg-white/80 p-4 shadow-xl shadow-slate-300/25 dark:bg-black/80 dark:shadow-black/20"
-            onClick={() => terminalInputRef.current?.focus()}
+    <main className="min-h-[calc(100dvh-4rem)] bg-background text-foreground">
+      <h1 className="sr-only">DOKKIITECH — 木戸亮輔のポートフォリオ</h1>
+      {mode === "terminal" ? (
+        <section className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-6xl flex-col px-3 py-3 sm:px-6 sm:py-6">
+          <div
+            className="flex min-h-[calc(100dvh-5.5rem)] flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_24px_80px_-32px_hsl(var(--primary)/0.35)] sm:min-h-[calc(100dvh-7rem)] dark:bg-[hsl(220_16%_5%)]"
+            onClick={(e) => {
+              // テキスト選択中やボタン押下時はフォーカスを奪わない
+              if ((e.target as HTMLElement).closest("button") || window.getSelection()?.toString()) return
+              terminalInputRef.current?.focus({ preventScroll: true })
+            }}
           >
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="h-3 w-3 rounded-full bg-red-400" />
-                <span className="h-3 w-3 rounded-full bg-yellow-400" />
-                <span className="h-3 w-3 rounded-full bg-green-400" />
+            <div className="flex items-center gap-3 border-b border-border bg-muted/40 px-3 py-2 sm:px-4">
+              <div className="flex items-center gap-1.5" aria-hidden>
+                <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+                <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
+                <span className="h-3 w-3 rounded-full bg-[#28c840]" />
               </div>
-              <div className="inline-flex items-center gap-2 rounded-md border border-emerald-300/40 bg-emerald-400/10 p-1">
-                <button
-                  type="button"
-                  onClick={() => setMode("terminal")}
-                  aria-label="Terminal Mode"
-                  title="Terminal Mode"
-                  className={`rounded px-2 py-1 text-xs ${mode === "terminal" ? "bg-emerald-500/30 text-emerald-100" : "text-emerald-300/80"}`}
-                >
-                  &gt;_
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode("ui")}
-                  aria-label="UI Mode"
-                  title="UI Mode"
-                  className={`rounded px-2 py-1 text-xs ${mode === "ui" ? "bg-cyan-500/30 text-cyan-100" : "text-cyan-300/80"}`}
-                >
-                  [ ]
-                </button>
-              </div>
+              <p className="flex-1 truncate text-center font-mono text-xs text-muted-foreground">
+                <span className="hidden sm:inline">dokkiitech@portfolio: </span>~ — zsh
+              </p>
+              <ModeToggle mode={mode} onChange={setMode} />
             </div>
-            <div className="space-y-1 font-mono text-sm">
-              <pre className="mb-4 overflow-x-auto border border-emerald-400/30 bg-emerald-400/5 p-3 text-[8px] leading-tight text-emerald-300 md:text-[11px]">
+
+            <div className="flex-1 overflow-y-auto px-4 py-4 font-mono text-[13px] leading-6 sm:px-6 sm:py-5 sm:text-sm">
+              <pre
+                aria-label="DOKKIITECH"
+                className="font-ascii mb-5 overflow-x-hidden text-[6.5px] leading-tight text-primary min-[400px]:text-[7px] sm:text-[10px] md:text-[12px]"
+              >
                 {terminalTitleArt}
               </pre>
-              {history.map((line) => (
-                <p key={line.id} className={line.kind === "command" ? "text-emerald-600 dark:text-emerald-300" : "text-slate-700 dark:text-slate-200"}>
-                  {line.text}
-                </p>
-              ))}
-              <label className="flex items-center gap-2 text-emerald-600 dark:text-emerald-300">
-                <span className="hidden sm:inline">{prompt}</span>
-                <span className="sm:hidden text-xs">dokkiitech$</span>
+              <div role="log" aria-live="polite" className="space-y-0.5">
+                {history.map((line) => (
+                  <p
+                    key={line.id}
+                    className={cn(
+                      "whitespace-pre-wrap break-words",
+                      line.kind === "command" ? "mt-2 text-primary first:mt-0" : "text-foreground/85"
+                    )}
+                  >
+                    {line.text || " "}
+                  </p>
+                ))}
+              </div>
+              <label className="mt-2 flex items-center gap-2">
+                <span className="shrink-0">
+                  <span className="text-primary">
+                    <span className="hidden sm:inline">dokkiitech@portfolio</span>
+                    <span className="sm:hidden">dokkiitech</span>
+                  </span>
+                  <span className="text-muted-foreground">:~$</span>
+                </span>
+                <span className="sr-only">コマンドを入力</span>
                 <input
                   ref={terminalInputRef}
                   value={command}
@@ -652,7 +659,12 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
                       handleTabCompletion()
                     }
                   }}
-                  className="w-full bg-transparent text-base text-foreground outline-none md:text-sm"
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  enterKeyHint="send"
+                  className="w-full min-w-0 bg-transparent text-base text-foreground caret-primary outline-none placeholder:text-muted-foreground/60 md:text-sm"
                   placeholder={
                     bookingFlow ? bookingPlaceholders[bookingFlow.step] : isTyping ? "出力中..." : "例: cd /blog"
                   }
@@ -660,118 +672,227 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
               </label>
               <div ref={terminalBottomRef} />
             </div>
-          </section>
-        ) : (
-          <section className="space-y-8 pt-2">
-            <div className="flex justify-end">
-              <div className="inline-flex items-center gap-2 rounded-md border border-border bg-card p-1">
+
+            <div className="flex items-center gap-2 overflow-x-auto border-t border-border bg-muted/30 px-3 py-2.5 [mask-image:linear-gradient(to_right,black_85%,transparent)] [scrollbar-width:none] sm:px-4 sm:[mask-image:none]">
+              <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+                {bookingFlow ? "予約中:" : "タップで実行:"}
+              </span>
+              {(bookingFlow ? (["cancel"] as const) : quickCommands).map((item) => (
                 <button
+                  key={item}
                   type="button"
-                  onClick={() => setMode("terminal")}
-                  aria-label="Terminal Mode"
-                  title="Terminal Mode"
-                  className={`rounded px-2 py-1 text-xs ${mode === "terminal" ? "bg-primary/15 text-primary" : "text-muted-foreground"}`}
+                  onClick={() => runQuickCommand(item)}
+                  disabled={isTyping}
+                  className="shrink-0 rounded-md border border-border bg-background px-2.5 py-1 font-mono text-xs text-foreground/80 transition-colors hover:border-primary/50 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                 >
-                  &gt;_
+                  {item}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setMode("ui")}
-                  aria-label="UI Mode"
-                  title="UI Mode"
-                  className={`rounded px-2 py-1 text-xs ${mode === "ui" ? "bg-primary/15 text-primary" : "text-muted-foreground"}`}
-                >
-                  [ ]
-                </button>
-              </div>
+              ))}
             </div>
-            <article id="profile" className="rounded-3xl border border-border bg-card p-7 shadow-sm">
-              <p className="text-xs tracking-[0.25em] text-cyan-300">PROFILE</p>
-              <h2 className="mt-2 text-3xl font-bold">木戸亮輔 / DOKKIITECH</h2>
-              <div className="mt-4 max-w-3xl space-y-2 text-muted-foreground">
+          </div>
+        </section>
+      ) : (
+        <section className="mx-auto max-w-6xl px-4 pb-20 pt-6 sm:px-6 sm:pt-8">
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <p className="font-mono text-xs text-muted-foreground">
+              <span className="text-primary">dokkiitech@portfolio</span>:~$ open --ui
+            </p>
+            <ModeToggle mode={mode} onChange={setMode} />
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <article id="profile" className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 sm:p-8 lg:col-span-2">
+              <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+              <SectionLabel>whoami</SectionLabel>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+                木戸亮輔<span className="ml-3 align-middle font-mono text-base font-medium text-muted-foreground sm:text-lg">/ DOKKIITECH</span>
+              </h2>
+              <div className="mt-5 max-w-2xl space-y-2 leading-7 text-muted-foreground">
                 <p>初めまして或いはこんにちは。木戸です。28卒の学生エンジニアです。</p>
                 <p>主領域はバックエンドです。その他にもインフラ周りやフロントエンドも適度にできる自称フロンエンドエンジニアです。</p>
                 <p>様々なIT団体を運営し自身の技術力向上と共に地域のIT文化の活性化をするための活動をしています。</p>
                 <p>また自宅サーバー dokkiitech Regionを運営し自身のプロダクトを幅広く更新しています。</p>
               </div>
-              <div className="mt-5 flex flex-wrap gap-2">
-                {["Next.js", "TypeScript", "Go", "Docker", "AWS", "Security"].map((tag) => (
-                  <span key={tag} className="rounded-full border border-cyan-400/40 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-100">
+              <ul className="mt-6 flex flex-wrap gap-2">
+                {profileTags.map((tag) => (
+                  <li key={tag} className="rounded-md border border-primary/25 bg-accent px-2.5 py-1 font-mono text-xs text-accent-foreground">
                     {tag}
-                  </span>
+                  </li>
                 ))}
+              </ul>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Button asChild className="rounded-full">
+                  <Link href="/appointment">
+                    <CalendarClock />
+                    お打ち合わせを予約
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="rounded-full">
+                  <Link href="/profile">
+                    プロフィール詳細
+                    <ArrowRight />
+                  </Link>
+                </Button>
               </div>
             </article>
 
-            <div className="grid gap-6 lg:grid-cols-2">
-              <article id="blog" className="rounded-2xl border border-border bg-card p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-2xl font-semibold">ブログ</h2>
-                  <a href="https://zenn.dev/dokkiitech" target="_blank" rel="noreferrer" className="text-sm text-sky-300 underline">
-                    Zennで見る
-                  </a>
-                </div>
-                <div className="space-y-3">
-                  {blogArticles.slice(0, 4).map((item) => (
-                    <a key={item.link} href={item.link} target="_blank" rel="noreferrer" className="block rounded-xl border border-border p-3 transition hover:-translate-y-0.5 hover:bg-muted">
-                      <p className="font-medium">{item.title}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">{new Date(item.pubDate).toLocaleDateString("ja-JP")}</p>
-                    </a>
+            <article className="rounded-2xl border border-border bg-card p-6">
+              <SectionLabel>stack</SectionLabel>
+              <h2 className="mt-3 text-lg font-semibold">GitHub の言語比率</h2>
+              {focusStack.length > 0 ? (
+                <ul className="mt-5 space-y-3.5">
+                  {focusStack.map((item) => (
+                    <li key={item.language}>
+                      <div className="mb-1.5 flex items-baseline justify-between font-mono text-xs">
+                        <span>{item.language}</span>
+                        <span className="tabular-nums text-muted-foreground">{item.percentage}%</span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(item.percentage, 2)}%` }} />
+                      </div>
+                    </li>
                   ))}
-                </div>
-              </article>
+                </ul>
+              ) : (
+                <p className="mt-5 text-sm text-muted-foreground">現在データを取得できません。</p>
+              )}
+            </article>
 
-              <article id="product" className="rounded-2xl border border-border bg-card p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-2xl font-semibold">Product</h2>
-                  <a href="https://zenn.dev/dokkiitech" target="_blank" rel="noreferrer" className="text-sm text-sky-300 underline">
-                    Zennで見る
-                  </a>
-                </div>
-                <div className="space-y-3">
-                  {productArticles.slice(0, 4).map((item) => (
-                    <a key={item.link} href={item.link} target="_blank" rel="noreferrer" className="block rounded-xl border border-border p-3 transition hover:-translate-y-0.5 hover:bg-muted">
-                      <p className="font-medium">{item.title}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">{new Date(item.pubDate).toLocaleDateString("ja-JP")}</p>
-                    </a>
-                  ))}
-                </div>
-              </article>
-            </div>
+            <ArticleList id="blog" label="blog" title="ブログ" href="/blog" articles={blogArticles} formatDate={formatDate} emptyText="記事を読み込めませんでした。" />
+            <ArticleList
+              id="product"
+              label="products"
+              title="Product"
+              href="/products"
+              articles={productArticles}
+              formatDate={formatDate}
+              emptyText="プロダクト紹介を準備中です。"
+            />
 
             <article id="sns" className="rounded-2xl border border-border bg-card p-6">
-              <h2 className="mb-4 text-2xl font-semibold">各種SNSリンク</h2>
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {snsLinks.map((item) => (
-                  <a
-                    key={item.href}
-                    href={item.href}
-                    target={item.href.startsWith("mailto:") ? undefined : "_blank"}
-                    rel={item.href.startsWith("mailto:") ? undefined : "noreferrer"}
-                    className="rounded-xl border border-border bg-card px-4 py-3 transition hover:border-cyan-400/50 hover:bg-muted"
-                  >
-                    <p className="font-medium">{item.label}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.label === "Email" ? "info@dokkiitech.com" : "@dokkiitech"}
-                    </p>
-                  </a>
+              <SectionLabel>contact</SectionLabel>
+              <h2 className="mt-3 text-lg font-semibold">SNS</h2>
+              <ul className="mt-4 space-y-1">
+                {socialLinks.map(({ label, href, handle, icon: Icon }) => (
+                  <li key={href}>
+                    <a
+                      href={href}
+                      target={isExternalHref(href) ? "_blank" : undefined}
+                      rel={isExternalHref(href) ? "noreferrer" : undefined}
+                      className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted"
+                    >
+                      <Icon className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+                      <span className="text-sm font-medium">{label}</span>
+                      <span className="ml-auto truncate font-mono text-xs text-muted-foreground">{handle}</span>
+                    </a>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </article>
 
-            <article id="booking" className="rounded-2xl border border-border bg-card p-6">
-              <h2 className="mb-3 text-2xl font-semibold">予約</h2>
-              <p className="text-muted-foreground">
-                打ち合わせ予約は `meet / 対面` に対応しています。対面の場合は場所指定ありで調整します。
-                連絡は `info@dokkiitech.com` でも可能です。
-              </p>
-              <Link href="/appointment" className="mt-4 inline-block rounded-lg border border-cyan-400/40 bg-cyan-500/10 px-4 py-2 text-cyan-100">
-                予約フォームを開く
-              </Link>
+            <article
+              id="booking"
+              className="relative overflow-hidden rounded-2xl border border-primary/30 bg-accent/60 p-6 sm:p-8 lg:col-span-3"
+            >
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <SectionLabel>book</SectionLabel>
+                  <h2 className="mt-3 text-xl font-semibold sm:text-2xl">お打ち合わせのご予約</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">
+                    Google Meet・対面のどちらにも対応しています（対面の場合は場所を指定して調整します）。メール（info@dokkiitech.com）でのご連絡も歓迎です。
+                  </p>
+                </div>
+                <Button asChild size="lg" className="shrink-0 rounded-full">
+                  <Link href="/appointment">
+                    予約フォームを開く
+                    <ArrowRight />
+                  </Link>
+                </Button>
+              </div>
             </article>
-          </section>
-        )}
-      </section>
+          </div>
+        </section>
+      )}
     </main>
+  )
+}
+
+function ModeToggle({ mode, onChange }: { mode: Mode; onChange: (mode: Mode) => void }) {
+  const options = [
+    { value: "terminal" as const, label: "Terminal", icon: SquareTerminal },
+    { value: "ui" as const, label: "UI", icon: LayoutGrid },
+  ]
+  return (
+    <div role="group" aria-label="表示モード" className="inline-flex shrink-0 items-center rounded-lg border border-border bg-background p-0.5">
+      {options.map(({ value, label, icon: Icon }) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => onChange(value)}
+          aria-pressed={mode === value}
+          aria-label={`${label} Mode`}
+          title={`${label} Mode`}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-[11px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            mode === value ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Icon className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">{label}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function ArticleList({
+  id,
+  label,
+  title,
+  href,
+  articles,
+  formatDate,
+  emptyText,
+}: {
+  id: string
+  label: string
+  title: string
+  href: string
+  articles: ZennArticle[]
+  formatDate: (value: string) => string
+  emptyText: string
+}) {
+  return (
+    <article id={id} className="flex flex-col rounded-2xl border border-border bg-card p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <SectionLabel>{label}</SectionLabel>
+          <h2 className="mt-3 text-lg font-semibold">{title}</h2>
+        </div>
+        <Link href={href} className="inline-flex items-center gap-1 text-sm text-primary underline-offset-4 hover:underline">
+          すべて見る
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+      {articles.length > 0 ? (
+        <ul className="mt-4 divide-y divide-border">
+          {articles.slice(0, 4).map((item) => (
+            <li key={item.link}>
+              <a href={item.link} target="_blank" rel="noreferrer" className="group flex items-start gap-3 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-2 text-sm font-medium leading-6 transition-colors group-hover:text-primary">{item.title}</p>
+                  <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">{formatDate(item.pubDate)}</p>
+                </div>
+                <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="mt-4 flex flex-1 items-center justify-center rounded-xl border border-dashed border-border px-4 py-10">
+          <p className="font-mono text-xs text-muted-foreground">{emptyText}</p>
+        </div>
+      )}
+    </article>
   )
 }
