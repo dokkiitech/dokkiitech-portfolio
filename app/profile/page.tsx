@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
 import { SectionLabel } from "@/components/section-label"
 import { getFocusStackFromGitHub } from "@/lib/github"
-import { isExternalHref, socialLinks } from "@/lib/site"
+import { affiliations, isExternalHref, socialLinks } from "@/lib/site"
 import { ArrowUpRight, CalendarClock } from "lucide-react"
 
 export const metadata = {
@@ -24,13 +24,6 @@ const details = [
   { term: "名前", value: "木戸亮輔" },
   { term: "卒年", value: "28卒" },
   { term: "所属校", value: "福岡デザイン＆テクノロジー専門学校" },
-]
-
-const affiliations = [
-  { org: "一般社団法人TSUNAGU TechLinkLab", role: "開発責任者" },
-  { org: "北九州発ITコミュニティ StepByCode", role: "運営 技術メンター" },
-  { org: "福岡デザイン＆テクノロジー専門学校公認学生エンジニア団体 Tech.C Venture", role: "設立者・代表" },
-  { org: "学生団体 STECH", role: "運営" },
 ]
 
 export default async function ProfilePage() {
@@ -82,20 +75,45 @@ export default async function ProfilePage() {
                 <dd className="leading-6">{item.value}</dd>
               </div>
             ))}
+            <div className="py-3 text-sm">
+              <dt className="font-mono text-xs leading-6 text-muted-foreground">所属コミュニティ</dt>
+              <dd className="mt-2">
+                <ul className="space-y-2.5">
+                  {affiliations.map((item) => (
+                    <li key={item.org} className="flex items-baseline gap-2.5 leading-6">
+                      <span aria-hidden className="h-1.5 w-1.5 shrink-0 -translate-y-0.5 rounded-full bg-primary" />
+                      <span className="min-w-0">
+                        <span className="block font-medium">{item.org}</span>
+                        {item.role && <span className="block font-mono text-xs text-primary">{item.role}</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </dd>
+            </div>
           </dl>
         </article>
 
         <article className="rounded-2xl border border-border bg-card p-6 sm:p-8 lg:col-span-2">
-          <SectionLabel>ls ./affiliations</SectionLabel>
-          <ol className="relative mt-5 space-y-5 border-l border-border pl-6">
-            {affiliations.map((item) => (
-              <li key={item.org} className="relative">
-                <span aria-hidden className="absolute -left-[29px] top-2 h-2.5 w-2.5 rounded-full border-2 border-card bg-primary ring-1 ring-primary/40" />
-                <p className="font-medium leading-7">{item.org}</p>
-                <p className="font-mono text-xs text-primary">{item.role}</p>
+          <SectionLabel>git stats --languages</SectionLabel>
+          <h2 className="mt-3 text-lg font-semibold">Focus Stack</h2>
+          <p className="mt-1 text-sm text-muted-foreground">GitHub の公開リポジトリから集計した言語比率です。</p>
+          <ul className="mt-6 grid gap-x-10 gap-y-4 sm:grid-cols-2">
+            {skills.map((item) => (
+              <li key={item.language}>
+                <div className="mb-1.5 flex items-baseline justify-between font-mono text-xs">
+                  <span>{item.language}</span>
+                  <span className="tabular-nums text-muted-foreground">{item.percentage > 0 ? `${item.percentage}%` : "-"}</span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${Math.max(item.percentage, item.percentage > 0 ? 2 : 0)}%` }}
+                  />
+                </div>
               </li>
             ))}
-          </ol>
+          </ul>
         </article>
 
         <article className="rounded-2xl border border-border bg-card p-6">
@@ -114,28 +132,6 @@ export default async function ProfilePage() {
                   <span className="ml-auto truncate font-mono text-xs text-muted-foreground">{handle}</span>
                   <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                 </a>
-              </li>
-            ))}
-          </ul>
-        </article>
-
-        <article className="rounded-2xl border border-border bg-card p-6 sm:p-8 lg:col-span-3">
-          <SectionLabel>git stats --languages</SectionLabel>
-          <h2 className="mt-3 text-lg font-semibold">Focus Stack</h2>
-          <p className="mt-1 text-sm text-muted-foreground">GitHub の公開リポジトリから集計した言語比率です。</p>
-          <ul className="mt-6 grid gap-x-10 gap-y-4 sm:grid-cols-2">
-            {skills.map((item) => (
-              <li key={item.language}>
-                <div className="mb-1.5 flex items-baseline justify-between font-mono text-xs">
-                  <span>{item.language}</span>
-                  <span className="tabular-nums text-muted-foreground">{item.percentage > 0 ? `${item.percentage}%` : "-"}</span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-primary"
-                    style={{ width: `${Math.max(item.percentage, item.percentage > 0 ? 2 : 0)}%` }}
-                  />
-                </div>
               </li>
             ))}
           </ul>

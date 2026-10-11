@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { SectionLabel } from "@/components/section-label"
 import type { ZennArticle } from "@/lib/zenn"
 import type { FocusStackItem } from "@/lib/github"
-import { isExternalHref, socialLinks } from "@/lib/site"
+import { affiliations, isExternalHref, socialLinks } from "@/lib/site"
 import { cn } from "@/lib/utils"
 
 type Mode = "terminal" | "ui"
@@ -720,6 +720,20 @@ export function PortfolioExperience({ blogArticles, productArticles, focusStack 
                   </li>
                 ))}
               </ul>
+              <div className="mt-6 border-t border-border pt-5">
+                <p className="font-mono text-xs text-muted-foreground">所属コミュニティ</p>
+                <ul className="mt-3 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                  {affiliations.map((item) => (
+                    <li key={item.org} className="flex items-baseline gap-2.5 text-sm leading-6">
+                      <span aria-hidden className="h-1.5 w-1.5 shrink-0 -translate-y-0.5 rounded-full bg-primary" />
+                      <span className="min-w-0">
+                        <span className="block font-medium">{item.org}</span>
+                        {item.role && <span className="block font-mono text-xs text-primary">{item.role}</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
               <div className="mt-7 flex flex-wrap gap-3">
                 <Button asChild className="rounded-full">
                   <Link href="/appointment">

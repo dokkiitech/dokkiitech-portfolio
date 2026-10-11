@@ -28,3 +28,13 @@ export const navigationItems = [
 ]
 
 export const isExternalHref = (href: string) => !href.startsWith("mailto:")
+
+// 所属コミュニティ。ホームの whoami とプロフィールで共通
+export const affiliations: { org: string; role?: string }[] = [
+  { org: "JINEN株式会社", role: "STECHコミュニティマネージャー" },
+  { org: "一般社団法人TSUNAGU TechLinkLab", role: "エンジニア" },
+  { org: "STECH", role: "学生運営" },
+  { org: "特定非営利活動法人Nxtend" },
+  { org: "Tech.C Venture", role: "代表" },
+  { org: "StepByCode", role: "運営" },
+]
