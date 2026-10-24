@@ -97,11 +97,25 @@ function verifyPassword(password: string, hashed: string): boolean {
   return timingSafeEqual(Buffer.from(saved, "hex"), Buffer.from(generated, "hex"))
 }
 
+export function buildManageUrl(portalId: string, token: string): string {
+  const base =
+    process.env.BOOKING_PORTAL_BASE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://www.dokkiitech.com"
+  const path = `/appointment/manage/${portalId}?token=${token}`
+  return `${base}${path}`
+}
+
+// 予約者専用ページの有効期限は予約日の終わりまで
+export function portalExpiresAt(date: string): string {
+  return `${date}T23:59:59+09:00`
+}
+
 export async function createBookingPortal(input: CreatePortalInput) {
   const token = randomBytes(24).toString("hex")
   const initialPassword = randomBytes(6).toString("base64url")
   const id = randomUUID()
-  const expiresAt = `${input.date}T23:59:59+09:00`
+  const expiresAt = portalExpiresAt(input.date)
   const now = new Date().toISOString()
   const record: BookingPortalRecord = {
     id,
@@ -140,7 +154,7 @@ export async function createBookingPortal(input: CreatePortalInput) {
   return { id, token, expiresAt, initialPassword }
 }
 
-async function getPortalRecord(id: string): Promise<BookingPortalRecord | null> {
+export async function getPortalRecord(id: string): Promise<BookingPortalRecord | null> {
   const result = await getDocClient().send(
     new GetCommand({ TableName: getTableName(), Key: { id } })
   )
@@ -283,7 +297,15 @@ export async function updatePortalBooking(
   patch: Partial<
     Pick<
       BookingPortalRecord,
-      "date" | "time_slot" | "booking_type" | "location" | "agenda" | "company" | "calendar_event_url" | "meet_url"
+      | "date"
+      | "time_slot"
+      | "booking_type"
+      | "location"
+      | "agenda"
+      | "company"
+      | "calendar_event_url"
+      | "meet_url"
+      | "expires_at"
     >
   >
 ) {
@@ -292,6 +314,15 @@ export async function updatePortalBooking(
   } catch (error) {
     throw new Error(`Failed to update booking portal: ${String(error)}`)
   }
+}
+
+// 予約者専用ページのトークンとパスワードを再発行する（どちらもハッシュしか保存していないため、
+// 管理者が変更通知にリンクとパスワードを載せるときは再発行して送る。旧リンク・旧パスワードは無効になる）
+export async function rotatePortalCredentials(id: string): Promise<{ token: string; password: string }> {
+  const token = randomBytes(24).toString("hex")
+  const password = randomBytes(6).toString("base64url")
+  await updatePortalFields(id, { manage_token_hash: hashToken(token), manage_password_hash: hashPassword(password) })
+  return { token, password }
 }
 
 export async function cancelPortalBooking(id: string) {

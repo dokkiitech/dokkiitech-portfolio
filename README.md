@@ -119,7 +119,23 @@ BOOKING_PORTAL_BASE_URL=https://your-domain.com
 
 # Vercel Cron（MTGデイリーサマリー）
 CRON_SECRET=
+
+# 管理 API の認証（Cloudflare Access）。未設定時は本番の値を使う
+CF_ACCESS_TEAM_DOMAIN=dokkiitech.cloudflareaccess.com
+CF_ACCESS_AUD=
+# メール内ロゴ（/mail/dokkiitech-logo.png）の配信元。未設定時は https://www.dokkiitech.com
+MAIL_ASSET_BASE_URL=
+# ローカル開発時のみ 1 で管理 API の認証をスキップ（本番では無視される）
+ADMIN_AUTH_DISABLED=
 ```
+
+### 管理画面と管理 API の認証
+
+管理画面 `/appointment/admin` は Cloudflare Access で保護しています。管理 API（`/api/bookings/admin` 配下）は、Access ログイン時に発行される `CF_Authorization` Cookie（または `Cf-Access-Jwt-Assertion` ヘッダ）の JWT を署名・aud・iss・有効期限まで検証し、未ログインのリクエストは 401 を返します。
+
+管理画面の予約詳細から、予約者の予約日時を変更できます（`PATCH /api/bookings/admin/[id]`）。Google カレンダーの予定・Meet も更新され、既定では予約者に変更メールとカレンダー更新通知が送られます。予約受付の締切（Meet 1時間前 / 対面 2日前）は管理者の変更には適用しません。管理者が変更した場合は「予約管理者によって変更された」旨のメール（件名【重要】ご予約日時変更のお知らせ、変更前後の日時つき）が届きます。
+
+予約関連メール（予約完了 / 予約変更 / キャンセル）は `lib/mail-template.ts` の共通 HTML テンプレート（ロゴ入り、テキスト版つき）で送ります。
 
 ### MTGデイリーサマリー用の必須 env
 

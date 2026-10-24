@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { requireAdmin } from "@/lib/admin-auth"
 import { listBookingPortals, type BookingPortalStatus } from "@/lib/booking-portal"
 
 export const runtime = "nodejs"
@@ -13,6 +14,9 @@ function resolveStatus(status: BookingPortalStatus, expiresAt: string): BookingP
 }
 
 export async function GET(request: Request) {
+  const denied = await requireAdmin(request)
+  if (denied) return denied
+
   try {
     const { searchParams } = new URL(request.url)
     const date = searchParams.get("date") || undefined

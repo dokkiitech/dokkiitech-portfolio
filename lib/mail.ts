@@ -1,15 +1,6 @@
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2"
 import { awsClientConfig } from "@/lib/aws"
 
-const MAIL_COMMON_FOOTER_HTML = `
-<hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb;" />
-<p style="color:#4b5563;font-size:13px;line-height:1.7;">
-このメールアドレスは送信専用です。<br />
-メールでのご連絡はinfo&#64;dokkiitech.comにお願いします<br />
-SNSでのご連絡は <a href="https://www.dokkiitech.com/contact">https://www.dokkiitech.com/contact</a> からお願いします。
-</p>
-`
-
 let client: SESv2Client | null = null
 
 function getClient(): SESv2Client {
@@ -22,7 +13,7 @@ function getClient(): SESv2Client {
 export async function sendMail(
   to: string,
   subject: string,
-  html: string,
+  body: { html: string; text: string },
   senderName = "dokkiitech予約管理システム",
   fromAddressOverride?: string
 ) {
@@ -40,7 +31,10 @@ export async function sendMail(
         Content: {
           Simple: {
             Subject: { Data: subject, Charset: "UTF-8" },
-            Body: { Html: { Data: `${html}${MAIL_COMMON_FOOTER_HTML}`, Charset: "UTF-8" } },
+            Body: {
+              Html: { Data: body.html, Charset: "UTF-8" },
+              Text: { Data: body.text, Charset: "UTF-8" },
+            },
           },
         },
       })

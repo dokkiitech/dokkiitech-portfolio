@@ -1,9 +1,10 @@
 import { createSign } from "crypto"
 import { NextResponse } from "next/server"
 import { bookingSchema } from "@/lib/booking"
-import { createBookingPortal, generateBookingReference } from "@/lib/booking-portal"
+import { buildManageUrl, createBookingPortal, generateBookingReference } from "@/lib/booking-portal"
 import { sendDiscordConciergeNotification } from "@/lib/discord-concierge"
 import { sendMail } from "@/lib/mail"
+import { renderBookingMail } from "@/lib/mail-template"
 
 export const runtime = "nodejs"
 
@@ -19,15 +20,6 @@ type BookingMode = "mock" | "gcp"
 function getMode(): BookingMode {
   const mode = (process.env.BOOKING_BACKEND_MODE || "mock").toLowerCase()
   return mode === "gcp" ? "gcp" : "mock"
-}
-
-function buildManageUrl(portalId: string, token: string): string {
-  const base =
-    process.env.BOOKING_PORTAL_BASE_URL ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://www.dokkiitech.com"
-  const path = `/appointment/manage/${portalId}?token=${token}`
-  return `${base}${path}`
 }
 
 function getStartEnd(date: string, timeSlot: string) {
@@ -514,29 +506,32 @@ export async function POST(request: Request) {
     const dateJp = formatDateJp(payload.date)
     const endTime = calcEndTime(payload.timeSlot)
     const salutation = `${payload.company ? `${payload.company} ` : ""}${payload.name}さま`
-    const formatLine = payload.bookingType === "meet" ? "Google Meet" : `対面（${payload.location || "-"})`
+    const formatLine = payload.bookingType === "meet" ? "Google Meet" : `対面（${payload.location || "-"}）`
     const mailResult = await sendMail(
       payload.email,
       "予約完了のお知らせ",
-      `
-      <p>${salutation}</p>
-      <p>お打ち合わせのご予約ありがとうございます。下記の内容で受け付けました。</p>
-      <ul>
-        <li>予約番号：${bookingReference}</li>
-        <li>日程：${dateJp}</li>
-        <li>時刻：${payload.timeSlot} - ${endTime}</li>
-        <li>形式：${formatLine}</li>
-        ${event.hangoutLink ? `<li>Meet URL：${event.hangoutLink}</li>` : ""}
-      </ul>
-      ${
-        portal
-          ? `<p><strong>予約者専用ページ:</strong> <a href="${manageUrl}">${manageUrl}</a></p>
-             <p><strong>パスワード:</strong> ${portal.initialPassword}</p>`
-          : "<p>予約者専用ページは現在利用できません。</p>"
-      }
-      <p>Googleカレンダーへの招待メールも別途送付されますのでご確認ください</p>
-      <p>当日はどうぞよろしくお願い致します。</p>
-      `
+      renderBookingMail({
+        badge: "予約完了",
+        title: "ご予約を受け付けました",
+        salutation,
+        paragraphs: ["お打ち合わせのご予約ありがとうございます。下記の内容で受け付けました。"],
+        rows: [
+          { label: "予約番号", value: bookingReference },
+          { label: "日程", value: dateJp },
+          { label: "時刻", value: `${payload.timeSlot} - ${endTime}` },
+          { label: "形式", value: formatLine },
+          ...(event.hangoutLink ? [{ label: "Meet URL", value: event.hangoutLink, href: event.hangoutLink }] : []),
+          ...(portal ? [{ label: "パスワード", value: portal.initialPassword }] : []),
+        ],
+        ...(portal
+          ? { button: { label: "予約者専用ページを開く", href: manageUrl } }
+          : { notice: "予約者専用ページは現在利用できません。" }),
+        closing: [
+          "予約者専用ページから、日時の変更やキャンセルができます。ページを開く際は上記のパスワードを入力してください。",
+          "Googleカレンダーへの招待メールも別途送付されますのでご確認ください。",
+          "当日はどうぞよろしくお願い致します。",
+        ],
+      })
     )
 
     const discord = await sendDiscordConciergeNotification("created", {
