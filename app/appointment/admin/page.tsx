@@ -78,6 +78,10 @@ function sameDate(date: Date | undefined, key: string): boolean {
   return format(date, "yyyy-MM-dd") === key
 }
 
+function toTimeSlot(value: string): string {
+  return value.slice(0, 5)
+}
+
 export default function AppointmentAdminPage() {
   const [records, setRecords] = useState<AdminBookingRecord[]>([])
   const [loading, setLoading] = useState(false)
@@ -86,6 +90,16 @@ export default function AppointmentAdminPage() {
   const [mtgSummaryMessage, setMtgSummaryMessage] = useState("")
   const [selectedRecord, setSelectedRecord] = useState<AdminBookingRecord | null>(null)
   const [calendarDate, setCalendarDate] = useState<Date | undefined>(new Date())
+  const [reschedule, setReschedule] = useState({
+    date: "",
+    timeSlot: "",
+    notifyCustomer: true,
+    skipAvailabilityCheck: false,
+  })
+  const [rescheduleSlots, setRescheduleSlots] = useState<string[]>([])
+  const [rescheduleSlotsLoading, setRescheduleSlotsLoading] = useState(false)
+  const [rescheduleSaving, setRescheduleSaving] = useState(false)
+  const [rescheduleMessage, setRescheduleMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [filters, setFilters] = useState<SearchFilters>({
     date: "",
     status: "all",
@@ -133,6 +147,96 @@ export default function AppointmentAdminPage() {
     () => filteredRecords.filter((record) => record.date === selectedDateKey),
     [filteredRecords, selectedDateKey]
   )
+
+  useEffect(() => {
+    setReschedule({ date: "", timeSlot: "", notifyCustomer: true, skipAvailabilityCheck: false })
+    setRescheduleSlots([])
+    setRescheduleMessage(null)
+  }, [selectedRecord?.id])
+
+  const selectedBookingType = selectedRecord?.bookingType
+  useEffect(() => {
+    if (!reschedule.date || !selectedBookingType) {
+      setRescheduleSlots([])
+      return
+    }
+    let canceled = false
+    setRescheduleSlotsLoading(true)
+    fetch(`/api/bookings?date=${reschedule.date}&bookingType=${encodeURIComponent(selectedBookingType)}`)
+      .then((response) => response.json())
+      .then((json) => {
+        if (!canceled) setRescheduleSlots(json.ok && Array.isArray(json.slots) ? (json.slots as string[]) : [])
+      })
+      .catch(() => {
+        if (!canceled) setRescheduleSlots([])
+      })
+      .finally(() => {
+        if (!canceled) setRescheduleSlotsLoading(false)
+      })
+    return () => {
+      canceled = true
+    }
+  }, [reschedule.date, selectedBookingType])
+
+  const submitReschedule = async () => {
+    if (!selectedRecord || !reschedule.date || !reschedule.timeSlot) return
+    const nextTimeSlot = toTimeSlot(reschedule.timeSlot)
+    const confirmed = window.confirm(
+      `${selectedRecord.name} さんの予約を\n${formatBookingDate(selectedRecord.date)} ${selectedRecord.timeSlot}\n→ ${formatBookingDate(reschedule.date)} ${nextTimeSlot}\nに変更します。${reschedule.notifyCustomer ? "\n予約者に変更メールが送られます。" : ""}`
+    )
+    if (!confirmed) return
+
+    setRescheduleSaving(true)
+    setRescheduleMessage(null)
+    try {
+      const response = await fetch(`/api/bookings/admin/${encodeURIComponent(selectedRecord.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: reschedule.date,
+          timeSlot: nextTimeSlot,
+          notifyCustomer: reschedule.notifyCustomer,
+          skipAvailabilityCheck: reschedule.skipAvailabilityCheck,
+        }),
+      })
+      const json = await response.json()
+      if (!response.ok || !json.ok) {
+        setRescheduleMessage({ type: "error", text: json.message || "予約日時の変更に失敗しました。" })
+        return
+      }
+
+      const updated = json.record as {
+        date: string
+        time_slot: string
+        meet_url?: string | null
+        calendar_event_url?: string | null
+        updated_at: string
+      }
+      const nextRecord: AdminBookingRecord = {
+        ...selectedRecord,
+        date: updated.date,
+        timeSlot: updated.time_slot,
+        meetUrl: updated.meet_url ?? selectedRecord.meetUrl,
+        calendarEventUrl: updated.calendar_event_url ?? selectedRecord.calendarEventUrl,
+        updatedAt: updated.updated_at,
+      }
+      setRecords((prev) => prev.map((record) => (record.id === nextRecord.id ? nextRecord : record)))
+      setSelectedRecord(nextRecord)
+      const mailNote = reschedule.notifyCustomer
+        ? json.mail?.sent
+          ? "予約者に変更メールを送信しました。"
+          : "変更メールは送信できませんでした。"
+        : "予約者へのメールは送っていません。"
+      setRescheduleMessage({
+        type: "success",
+        text: `${formatBookingDate(nextRecord.date)} ${nextRecord.timeSlot} に変更しました。${mailNote}`,
+      })
+    } catch {
+      setRescheduleMessage({ type: "error", text: "通信エラーが発生しました。時間をおいて再度お試しください。" })
+    } finally {
+      setRescheduleSaving(false)
+    }
+  }
 
   const sendMtgSummary = async () => {
     setMtgSummaryLoading(true)
@@ -462,6 +566,105 @@ export default function AppointmentAdminPage() {
                   <p className="mt-1 font-medium">{selectedRecord.location}</p>
                 </div>
               )}
+
+              {selectedRecord.status === "active" ? (
+                <div className="rounded-xl border border-cyan-400/30 bg-cyan-500/5 p-4">
+                  <p className="text-sm font-medium">日時を変更</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Googleカレンダーの予定とMeetも新しい日時に更新されます。予約受付の締切（Meet 1時間前 / 対面 2日前）は適用されません。
+                  </p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <Label htmlFor="rescheduleDate">日付</Label>
+                      <Input
+                        id="rescheduleDate"
+                        type="date"
+                        value={reschedule.date}
+                        onChange={(event) => setReschedule((prev) => ({ ...prev, date: event.target.value, timeSlot: "" }))}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="rescheduleTime">開始時刻</Label>
+                      <Input
+                        id="rescheduleTime"
+                        type="time"
+                        step={60}
+                        value={reschedule.timeSlot}
+                        onChange={(event) => setReschedule((prev) => ({ ...prev, timeSlot: event.target.value }))}
+                        className="mt-2"
+                      />
+                    </div>
+                  </div>
+
+                  {reschedule.date && (
+                    <div className="mt-3">
+                      <p className="text-xs text-muted-foreground">
+                        {rescheduleSlotsLoading
+                          ? "空き枠を確認中..."
+                          : rescheduleSlots.length > 0
+                            ? "空いている枠（クリックで選択）"
+                            : "受付中の空き枠はありません。開始時刻を直接入力することもできます。"}
+                      </p>
+                      {!rescheduleSlotsLoading && rescheduleSlots.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {rescheduleSlots.map((slot) => (
+                            <Button
+                              key={slot}
+                              type="button"
+                              size="sm"
+                              variant={reschedule.timeSlot === slot ? "default" : "outline"}
+                              onClick={() => setReschedule((prev) => ({ ...prev, timeSlot: slot }))}
+                            >
+                              {slot}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="mt-3 space-y-2 text-sm">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={reschedule.notifyCustomer}
+                        onChange={(event) => setReschedule((prev) => ({ ...prev, notifyCustomer: event.target.checked }))}
+                      />
+                      予約者にメールとカレンダー招待で変更を知らせる
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={reschedule.skipAvailabilityCheck}
+                        onChange={(event) =>
+                          setReschedule((prev) => ({ ...prev, skipAvailabilityCheck: event.target.checked }))
+                        }
+                      />
+                      カレンダーの空き状況を確認せずに変更する
+                    </label>
+                  </div>
+
+                  {rescheduleMessage && (
+                    <p
+                      className={`mt-3 whitespace-pre-line text-sm ${
+                        rescheduleMessage.type === "success" ? "text-emerald-300" : "text-rose-300"
+                      }`}
+                    >
+                      {rescheduleMessage.text}
+                    </p>
+                  )}
+
+                  <Button
+                    type="button"
+                    className="mt-3 w-full sm:w-auto"
+                    onClick={() => void submitReschedule()}
+                    disabled={!reschedule.date || !reschedule.timeSlot || rescheduleSaving}
+                  >
+                    {rescheduleSaving ? "変更中..." : "この日時に変更する"}
+                  </Button>
+                </div>
+              ) : null}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-xl border border-border bg-background/60 p-4">

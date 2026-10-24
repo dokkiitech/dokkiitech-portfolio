@@ -140,7 +140,7 @@ export async function createBookingPortal(input: CreatePortalInput) {
   return { id, token, expiresAt, initialPassword }
 }
 
-async function getPortalRecord(id: string): Promise<BookingPortalRecord | null> {
+export async function getPortalRecord(id: string): Promise<BookingPortalRecord | null> {
   const result = await getDocClient().send(
     new GetCommand({ TableName: getTableName(), Key: { id } })
   )
