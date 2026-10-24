@@ -15,7 +15,7 @@ import {
 import {
   buildManageUrl,
   portalExpiresAt,
-  rotatePortalToken,
+  rotatePortalCredentials,
   updatePortalBooking,
   type BookingPortalRecord,
 } from "@/lib/booking-portal"
@@ -40,8 +40,9 @@ export interface RescheduleOptions {
   skipAvailabilityCheck?: boolean
   // admin のみ: false で予約者への変更メールを送らない
   notifyCustomer?: boolean
-  // customer のみ: 予約者が使っている専用ページのトークン（メールのボタンに使う）
+  // customer のみ: 予約者が使っている専用ページのトークンとパスワード（メールのボタン・記載に使う）
   manageToken?: string
+  managePassword?: string
 }
 
 export type RescheduleResult =
@@ -167,11 +168,16 @@ export async function rescheduleBooking(
     const endTime = calcEndTime(nextTimeSlot)
     const salutation = `${nextCompany ? `${nextCompany} ` : ""}${record.name}さま`
     const formatLine = nextBookingType === "meet" ? "Google Meet" : `対面（${nextLocation || "-"}）`
-    // トークンはハッシュしか持っていないので、管理者変更時は再発行して新しいリンクを送る
-    const manageToken = isAdmin ? await rotatePortalToken(record.id) : options.manageToken
-    const manageButton = manageToken
-      ? { button: { label: "予約者専用ページを開く", href: buildManageUrl(record.id, manageToken) } }
+    // トークン・パスワードはハッシュしか持っていないので、管理者変更時は再発行して新しいものを送る
+    const credentials = isAdmin
+      ? await rotatePortalCredentials(record.id)
+      : options.manageToken
+        ? { token: options.manageToken, password: options.managePassword || "" }
+        : null
+    const manageButton = credentials
+      ? { button: { label: "予約者専用ページを開く", href: buildManageUrl(record.id, credentials.token) } }
       : {}
+    const passwordRow = credentials?.password ? [{ label: "パスワード", value: credentials.password }] : []
     const dateChanged = nextDate !== record.date
     const timeChanged = nextTimeSlot !== record.time_slot
     mail = await sendMail(
@@ -199,11 +205,12 @@ export async function rescheduleBooking(
                 },
                 { label: "形式", value: formatLine },
                 ...(meetUrl ? [{ label: "Meet URL", value: meetUrl, href: meetUrl }] : []),
+                ...passwordRow,
               ],
               closing: [
                 "Googleカレンダーの予定にも変更内容が反映されます。",
                 "ご都合が合わない場合は、予約者専用ページから日時を変更いただくか、info@dokkiitech.com までご連絡ください。",
-                "予約者専用ページのパスワードは、予約完了時にお送りしたものと同じです。以前のメールのリンクは使えなくなりましたので、こちらのボタンからアクセスしてください。",
+                "予約者専用ページのリンクとパスワードを新しくしました。以前のメールのリンク・パスワードは使えなくなりましたので、こちらのボタンと上記のパスワードでアクセスしてください。",
                 "引き続きどうぞよろしくお願い致します。",
               ],
             }
@@ -223,6 +230,7 @@ export async function rescheduleBooking(
                 },
                 { label: "形式", value: formatLine },
                 ...(meetUrl ? [{ label: "Meet URL", value: meetUrl, href: meetUrl }] : []),
+                ...passwordRow,
               ],
               closing: [
                 "Googleカレンダーの予定にも変更内容が反映されます。",

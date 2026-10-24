@@ -46,7 +46,7 @@ export async function PATCH(
         agenda: body.agenda ? String(body.agenda) : undefined,
         company: body.company !== undefined ? String(body.company || "") : undefined,
       },
-      { actor: "customer", manageToken: token }
+      { actor: "customer", manageToken: token, managePassword: password }
     )
     if (!result.ok) {
       return NextResponse.json(

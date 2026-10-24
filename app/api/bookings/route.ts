@@ -521,15 +521,13 @@ export async function POST(request: Request) {
           { label: "時刻", value: `${payload.timeSlot} - ${endTime}` },
           { label: "形式", value: formatLine },
           ...(event.hangoutLink ? [{ label: "Meet URL", value: event.hangoutLink, href: event.hangoutLink }] : []),
+          ...(portal ? [{ label: "パスワード", value: portal.initialPassword }] : []),
         ],
         ...(portal
-          ? {
-              button: { label: "予約者専用ページを開く", href: manageUrl },
-              extras: [{ label: "専用ページのパスワード", value: portal.initialPassword }],
-            }
+          ? { button: { label: "予約者専用ページを開く", href: manageUrl } }
           : { notice: "予約者専用ページは現在利用できません。" }),
         closing: [
-          "予約者専用ページから、日時の変更やキャンセルができます。",
+          "予約者専用ページから、日時の変更やキャンセルができます。ページを開く際は上記のパスワードを入力してください。",
           "Googleカレンダーへの招待メールも別途送付されますのでご確認ください。",
           "当日はどうぞよろしくお願い致します。",
         ],

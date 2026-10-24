@@ -316,12 +316,13 @@ export async function updatePortalBooking(
   }
 }
 
-// 予約者専用ページのトークンを再発行する（トークンはハッシュしか保存していないため、
-// 管理者が変更通知にリンクを載せるときは再発行して新しいリンクを送る。旧リンクは無効になる）
-export async function rotatePortalToken(id: string): Promise<string> {
+// 予約者専用ページのトークンとパスワードを再発行する（どちらもハッシュしか保存していないため、
+// 管理者が変更通知にリンクとパスワードを載せるときは再発行して送る。旧リンク・旧パスワードは無効になる）
+export async function rotatePortalCredentials(id: string): Promise<{ token: string; password: string }> {
   const token = randomBytes(24).toString("hex")
-  await updatePortalFields(id, { manage_token_hash: hashToken(token) })
-  return token
+  const password = randomBytes(6).toString("base64url")
+  await updatePortalFields(id, { manage_token_hash: hashToken(token), manage_password_hash: hashPassword(password) })
+  return { token, password }
 }
 
 export async function cancelPortalBooking(id: string) {
