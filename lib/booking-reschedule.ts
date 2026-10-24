@@ -15,6 +15,7 @@ import {
 import { updatePortalBooking, type BookingPortalRecord } from "@/lib/booking-portal"
 import { sendDiscordConciergeNotification } from "@/lib/discord-concierge"
 import { sendMail } from "@/lib/mail"
+import { renderBookingMail } from "@/lib/mail-template"
 
 const UPDATE_FROM_ADDRESS = "reappointment@dokkiitech.work"
 
@@ -156,26 +157,59 @@ export async function rescheduleBooking(
     const dateJp = formatDateJp(nextDate)
     const endTime = calcEndTime(nextTimeSlot)
     const salutation = `${nextCompany ? `${nextCompany} ` : ""}${record.name}さま`
-    const formatLine = nextBookingType === "meet" ? "Google Meet" : `対面（${nextLocation || "-"})`
-    const lead = isAdmin
-      ? `<p>お打ち合わせの日時を下記のとおり変更させていただきました。ご都合が合わない場合は、お手数ですがご連絡ください。</p>
-      <p>変更前：${formatDateJp(record.date)} ${record.time_slot} - ${calcEndTime(record.time_slot)}</p>`
-      : `<p>お打ち合わせの予約内容を変更しました。下記の内容で更新されました。</p>`
+    const formatLine = nextBookingType === "meet" ? "Google Meet" : `対面（${nextLocation || "-"}）`
+    const dateChanged = nextDate !== record.date
+    const timeChanged = nextTimeSlot !== record.time_slot
     mail = await sendMail(
       record.email,
-      "予約変更のお知らせ",
-      `
-      <p>${salutation}</p>
-      ${lead}
-      <ul>
-        <li>予約番号：${record.booking_id}</li>
-        <li>日程：${dateJp}</li>
-        <li>時刻：${nextTimeSlot} - ${endTime}</li>
-        <li>形式：${formatLine}</li>
-        ${meetUrl ? `<li>Meet URL：${meetUrl}</li>` : ""}
-      </ul>
-      <p>Googleカレンダーの予定にも変更内容が反映されます。</p>
-      `,
+      isAdmin ? "【重要】ご予約日時変更のお知らせ" : "予約変更のお知らせ",
+      renderBookingMail(
+        isAdmin
+          ? {
+              badge: "日時変更のお知らせ",
+              title: "ご予約の日時が変更されました",
+              salutation,
+              paragraphs: [
+                "いつもありがとうございます。dokkiitech です。",
+                "ご予約いただいていたお打ち合わせについて、こちらの都合により日時を変更させていただきました。ご迷惑をおかけし申し訳ございません。",
+              ],
+              notice: "この変更は、dokkiitech の予約管理者によって行われました。",
+              rows: [
+                { label: "予約番号", value: record.booking_id },
+                { label: "日程", value: dateJp, ...(dateChanged ? { before: formatDateJp(record.date) } : {}) },
+                {
+                  label: "時刻",
+                  value: `${nextTimeSlot} - ${endTime}`,
+                  ...(timeChanged ? { before: `${record.time_slot} - ${calcEndTime(record.time_slot)}` } : {}),
+                },
+                { label: "形式", value: formatLine },
+                ...(meetUrl ? [{ label: "Meet URL", value: meetUrl, href: meetUrl }] : []),
+              ],
+              closing: [
+                "Googleカレンダーの予定にも変更内容が反映されます。",
+                "ご都合が合わない場合は、予約者専用ページから日時を変更いただくか、info@dokkiitech.com までご連絡ください。",
+                "引き続きどうぞよろしくお願い致します。",
+              ],
+            }
+          : {
+              badge: "予約変更",
+              title: "ご予約内容を変更しました",
+              salutation,
+              paragraphs: ["お打ち合わせの予約内容を変更しました。下記の内容で更新されました。"],
+              rows: [
+                { label: "予約番号", value: record.booking_id },
+                { label: "日程", value: dateJp, ...(dateChanged ? { before: formatDateJp(record.date) } : {}) },
+                {
+                  label: "時刻",
+                  value: `${nextTimeSlot} - ${endTime}`,
+                  ...(timeChanged ? { before: `${record.time_slot} - ${calcEndTime(record.time_slot)}` } : {}),
+                },
+                { label: "形式", value: formatLine },
+                ...(meetUrl ? [{ label: "Meet URL", value: meetUrl, href: meetUrl }] : []),
+              ],
+              closing: ["Googleカレンダーの予定にも変更内容が反映されます。", "当日はどうぞよろしくお願い致します。"],
+            }
+      ),
       "dokkiitech予約管理システム予約変更センター",
       UPDATE_FROM_ADDRESS
     )

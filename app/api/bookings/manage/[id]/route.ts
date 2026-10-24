@@ -10,6 +10,7 @@ import { cancelPortalBooking, verifyPortalAccess } from "@/lib/booking-portal"
 import { rescheduleBooking } from "@/lib/booking-reschedule"
 import { sendDiscordConciergeNotification } from "@/lib/discord-concierge"
 import { sendMail } from "@/lib/mail"
+import { renderBookingMail } from "@/lib/mail-template"
 
 const CANCEL_FROM_ADDRESS = "unappointment@dokkiitech.work"
 
@@ -110,21 +111,26 @@ export async function DELETE(
     const formatLine =
       checked.record.booking_type === "meet"
         ? "Google Meet"
-        : `対面（${checked.record.location || "-"})`
+        : `対面（${checked.record.location || "-"}）`
     const mail = await sendMail(
       checked.record.email,
       "予約キャンセルのお知らせ",
-      `
-      <p>${salutation}</p>
-      <p>お打ち合わせのご予約をキャンセルしました。下記の内容がキャンセル対象です。</p>
-      <ul>
-        <li>予約番号：${checked.record.booking_id}</li>
-        <li>日程：${dateJp}</li>
-        <li>時刻：${checked.record.time_slot} - ${endTime}</li>
-        <li>形式：${formatLine}</li>
-      </ul>
-      <p>Googleカレンダーの予定もキャンセルされます。</p>
-      `,
+      renderBookingMail({
+        badge: "キャンセル完了",
+        title: "ご予約をキャンセルしました",
+        salutation,
+        paragraphs: ["お打ち合わせのご予約をキャンセルしました。下記の内容がキャンセル対象です。"],
+        rows: [
+          { label: "予約番号", value: checked.record.booking_id },
+          { label: "日程", value: dateJp },
+          { label: "時刻", value: `${checked.record.time_slot} - ${endTime}` },
+          { label: "形式", value: formatLine },
+        ],
+        closing: [
+          "Googleカレンダーの予定もキャンセルされます。",
+          "またの機会がございましたら、ぜひご予約ください。",
+        ],
+      }),
       "dokkiitech予約管理システムキャンセル承りセンター",
       CANCEL_FROM_ADDRESS
     )
