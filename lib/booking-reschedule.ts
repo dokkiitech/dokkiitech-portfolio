@@ -190,7 +190,7 @@ export async function rescheduleBooking(
               title: "ご予約の日時が変更されました",
               salutation,
               paragraphs: [
-                "いつもありがとうございます。dokkiitech です。",
+                "いつもありがとうございます。木戸です。",
                 "ご予約いただいていたお打ち合わせについて、こちらの都合により日時を変更させていただきました。ご迷惑をおかけし申し訳ございません。",
               ],
               notice: "この変更は、dokkiitech の予約管理者によって行われました。",
