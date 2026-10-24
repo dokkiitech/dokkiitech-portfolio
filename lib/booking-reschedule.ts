@@ -12,7 +12,13 @@ import {
   isMeetTooSoon,
   isPastSlot,
 } from "@/lib/booking-calendar"
-import { updatePortalBooking, type BookingPortalRecord } from "@/lib/booking-portal"
+import {
+  buildManageUrl,
+  portalExpiresAt,
+  rotatePortalToken,
+  updatePortalBooking,
+  type BookingPortalRecord,
+} from "@/lib/booking-portal"
 import { sendDiscordConciergeNotification } from "@/lib/discord-concierge"
 import { sendMail } from "@/lib/mail"
 import { renderBookingMail } from "@/lib/mail-template"
@@ -34,6 +40,8 @@ export interface RescheduleOptions {
   skipAvailabilityCheck?: boolean
   // admin のみ: false で予約者への変更メールを送らない
   notifyCustomer?: boolean
+  // customer のみ: 予約者が使っている専用ページのトークン（メールのボタンに使う）
+  manageToken?: string
 }
 
 export type RescheduleResult =
@@ -150,6 +158,7 @@ export async function rescheduleBooking(
     company: nextCompany,
     calendar_event_url: calendarEventUrl || null,
     meet_url: meetUrl || null,
+    expires_at: portalExpiresAt(nextDate),
   })
 
   let mail: { sent: boolean; reason?: string } = { sent: false, reason: "notification disabled" }
@@ -158,6 +167,11 @@ export async function rescheduleBooking(
     const endTime = calcEndTime(nextTimeSlot)
     const salutation = `${nextCompany ? `${nextCompany} ` : ""}${record.name}さま`
     const formatLine = nextBookingType === "meet" ? "Google Meet" : `対面（${nextLocation || "-"}）`
+    // トークンはハッシュしか持っていないので、管理者変更時は再発行して新しいリンクを送る
+    const manageToken = isAdmin ? await rotatePortalToken(record.id) : options.manageToken
+    const manageButton = manageToken
+      ? { button: { label: "予約者専用ページを開く", href: buildManageUrl(record.id, manageToken) } }
+      : {}
     const dateChanged = nextDate !== record.date
     const timeChanged = nextTimeSlot !== record.time_slot
     mail = await sendMail(
@@ -174,6 +188,7 @@ export async function rescheduleBooking(
                 "ご予約いただいていたお打ち合わせについて、こちらの都合により日時を変更させていただきました。ご迷惑をおかけし申し訳ございません。",
               ],
               notice: "この変更は、dokkiitech の予約管理者によって行われました。",
+              ...manageButton,
               rows: [
                 { label: "予約番号", value: record.booking_id },
                 { label: "日程", value: dateJp, ...(dateChanged ? { before: formatDateJp(record.date) } : {}) },
@@ -188,6 +203,7 @@ export async function rescheduleBooking(
               closing: [
                 "Googleカレンダーの予定にも変更内容が反映されます。",
                 "ご都合が合わない場合は、予約者専用ページから日時を変更いただくか、info@dokkiitech.com までご連絡ください。",
+                "予約者専用ページのパスワードは、予約完了時にお送りしたものと同じです。以前のメールのリンクは使えなくなりましたので、こちらのボタンからアクセスしてください。",
                 "引き続きどうぞよろしくお願い致します。",
               ],
             }
@@ -196,6 +212,7 @@ export async function rescheduleBooking(
               title: "ご予約内容を変更しました",
               salutation,
               paragraphs: ["お打ち合わせの予約内容を変更しました。下記の内容で更新されました。"],
+              ...manageButton,
               rows: [
                 { label: "予約番号", value: record.booking_id },
                 { label: "日程", value: dateJp, ...(dateChanged ? { before: formatDateJp(record.date) } : {}) },
@@ -207,7 +224,11 @@ export async function rescheduleBooking(
                 { label: "形式", value: formatLine },
                 ...(meetUrl ? [{ label: "Meet URL", value: meetUrl, href: meetUrl }] : []),
               ],
-              closing: ["Googleカレンダーの予定にも変更内容が反映されます。", "当日はどうぞよろしくお願い致します。"],
+              closing: [
+                "Googleカレンダーの予定にも変更内容が反映されます。",
+                "予約者専用ページから、再度の変更やキャンセルができます。",
+                "当日はどうぞよろしくお願い致します。",
+              ],
             }
       ),
       "dokkiitech予約管理システム予約変更センター",

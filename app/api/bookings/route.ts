@@ -1,7 +1,7 @@
 import { createSign } from "crypto"
 import { NextResponse } from "next/server"
 import { bookingSchema } from "@/lib/booking"
-import { createBookingPortal, generateBookingReference } from "@/lib/booking-portal"
+import { buildManageUrl, createBookingPortal, generateBookingReference } from "@/lib/booking-portal"
 import { sendDiscordConciergeNotification } from "@/lib/discord-concierge"
 import { sendMail } from "@/lib/mail"
 import { renderBookingMail } from "@/lib/mail-template"
@@ -20,15 +20,6 @@ type BookingMode = "mock" | "gcp"
 function getMode(): BookingMode {
   const mode = (process.env.BOOKING_BACKEND_MODE || "mock").toLowerCase()
   return mode === "gcp" ? "gcp" : "mock"
-}
-
-function buildManageUrl(portalId: string, token: string): string {
-  const base =
-    process.env.BOOKING_PORTAL_BASE_URL ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://www.dokkiitech.com"
-  const path = `/appointment/manage/${portalId}?token=${token}`
-  return `${base}${path}`
 }
 
 function getStartEnd(date: string, timeSlot: string) {
@@ -534,10 +525,7 @@ export async function POST(request: Request) {
         ...(portal
           ? {
               button: { label: "予約者専用ページを開く", href: manageUrl },
-              extras: [
-                { label: "予約者専用ページ", value: manageUrl, href: manageUrl },
-                { label: "パスワード", value: portal.initialPassword },
-              ],
+              extras: [{ label: "専用ページのパスワード", value: portal.initialPassword }],
             }
           : { notice: "予約者専用ページは現在利用できません。" }),
         closing: [

@@ -46,7 +46,7 @@ export async function PATCH(
         agenda: body.agenda ? String(body.agenda) : undefined,
         company: body.company !== undefined ? String(body.company || "") : undefined,
       },
-      { actor: "customer" }
+      { actor: "customer", manageToken: token }
     )
     if (!result.ok) {
       return NextResponse.json(
@@ -126,6 +126,7 @@ export async function DELETE(
           { label: "時刻", value: `${checked.record.time_slot} - ${endTime}` },
           { label: "形式", value: formatLine },
         ],
+        button: { label: "あらためて予約する", href: `${process.env.BOOKING_PORTAL_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://www.dokkiitech.com"}/appointment` },
         closing: [
           "Googleカレンダーの予定もキャンセルされます。",
           "またの機会がございましたら、ぜひご予約ください。",

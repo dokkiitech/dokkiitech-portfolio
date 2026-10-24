@@ -97,11 +97,25 @@ function verifyPassword(password: string, hashed: string): boolean {
   return timingSafeEqual(Buffer.from(saved, "hex"), Buffer.from(generated, "hex"))
 }
 
+export function buildManageUrl(portalId: string, token: string): string {
+  const base =
+    process.env.BOOKING_PORTAL_BASE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://www.dokkiitech.com"
+  const path = `/appointment/manage/${portalId}?token=${token}`
+  return `${base}${path}`
+}
+
+// 予約者専用ページの有効期限は予約日の終わりまで
+export function portalExpiresAt(date: string): string {
+  return `${date}T23:59:59+09:00`
+}
+
 export async function createBookingPortal(input: CreatePortalInput) {
   const token = randomBytes(24).toString("hex")
   const initialPassword = randomBytes(6).toString("base64url")
   const id = randomUUID()
-  const expiresAt = `${input.date}T23:59:59+09:00`
+  const expiresAt = portalExpiresAt(input.date)
   const now = new Date().toISOString()
   const record: BookingPortalRecord = {
     id,
@@ -283,7 +297,15 @@ export async function updatePortalBooking(
   patch: Partial<
     Pick<
       BookingPortalRecord,
-      "date" | "time_slot" | "booking_type" | "location" | "agenda" | "company" | "calendar_event_url" | "meet_url"
+      | "date"
+      | "time_slot"
+      | "booking_type"
+      | "location"
+      | "agenda"
+      | "company"
+      | "calendar_event_url"
+      | "meet_url"
+      | "expires_at"
     >
   >
 ) {
@@ -292,6 +314,14 @@ export async function updatePortalBooking(
   } catch (error) {
     throw new Error(`Failed to update booking portal: ${String(error)}`)
   }
+}
+
+// 予約者専用ページのトークンを再発行する（トークンはハッシュしか保存していないため、
+// 管理者が変更通知にリンクを載せるときは再発行して新しいリンクを送る。旧リンクは無効になる）
+export async function rotatePortalToken(id: string): Promise<string> {
+  const token = randomBytes(24).toString("hex")
+  await updatePortalFields(id, { manage_token_hash: hashToken(token) })
+  return token
 }
 
 export async function cancelPortalBooking(id: string) {
