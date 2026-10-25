@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { format } from "date-fns"
+import { format, parse } from "date-fns"
 import { ja } from "date-fns/locale"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { BookingSlotPicker } from "@/components/booking-slot-picker"
 import { CopyBookingIdButton } from "@/components/copy-booking-id-button"
 
 type BookingStatus = "active" | "canceled" | "expired"
@@ -78,10 +79,6 @@ function sameDate(date: Date | undefined, key: string): boolean {
   return format(date, "yyyy-MM-dd") === key
 }
 
-function toTimeSlot(value: string): string {
-  return value.slice(0, 5)
-}
-
 export default function AppointmentAdminPage() {
   const [records, setRecords] = useState<AdminBookingRecord[]>([])
   const [loading, setLoading] = useState(false)
@@ -96,8 +93,6 @@ export default function AppointmentAdminPage() {
     notifyCustomer: true,
     skipAvailabilityCheck: false,
   })
-  const [rescheduleSlots, setRescheduleSlots] = useState<string[]>([])
-  const [rescheduleSlotsLoading, setRescheduleSlotsLoading] = useState(false)
   const [rescheduleSaving, setRescheduleSaving] = useState(false)
   const [rescheduleMessage, setRescheduleMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [filters, setFilters] = useState<SearchFilters>({
@@ -150,37 +145,12 @@ export default function AppointmentAdminPage() {
 
   useEffect(() => {
     setReschedule({ date: "", timeSlot: "", notifyCustomer: true, skipAvailabilityCheck: false })
-    setRescheduleSlots([])
     setRescheduleMessage(null)
   }, [selectedRecord?.id])
 
-  const selectedBookingType = selectedRecord?.bookingType
-  useEffect(() => {
-    if (!reschedule.date || !selectedBookingType) {
-      setRescheduleSlots([])
-      return
-    }
-    let canceled = false
-    setRescheduleSlotsLoading(true)
-    fetch(`/api/bookings?date=${reschedule.date}&bookingType=${encodeURIComponent(selectedBookingType)}`)
-      .then((response) => response.json())
-      .then((json) => {
-        if (!canceled) setRescheduleSlots(json.ok && Array.isArray(json.slots) ? (json.slots as string[]) : [])
-      })
-      .catch(() => {
-        if (!canceled) setRescheduleSlots([])
-      })
-      .finally(() => {
-        if (!canceled) setRescheduleSlotsLoading(false)
-      })
-    return () => {
-      canceled = true
-    }
-  }, [reschedule.date, selectedBookingType])
-
   const submitReschedule = async () => {
     if (!selectedRecord || !reschedule.date || !reschedule.timeSlot) return
-    const nextTimeSlot = toTimeSlot(reschedule.timeSlot)
+    const nextTimeSlot = reschedule.timeSlot
     const confirmed = window.confirm(
       `${selectedRecord.name} さんの予約を\n${formatBookingDate(selectedRecord.date)} ${selectedRecord.timeSlot}\n→ ${formatBookingDate(reschedule.date)} ${nextTimeSlot}\nに変更します。${reschedule.notifyCustomer ? "\n予約者に変更メールが送られます。" : ""}`
     )
@@ -571,58 +541,21 @@ export default function AppointmentAdminPage() {
                 <div className="rounded-xl border border-cyan-400/30 bg-cyan-500/5 p-4">
                   <p className="text-sm font-medium">日時を変更</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Googleカレンダーの予定とMeetも新しい日時に更新されます。予約受付の締切（Meet 1時間前 / 対面 2日前）は適用されません。
+                    Googleカレンダーの予定とMeetも新しい日時に更新されます。
                   </p>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <Label htmlFor="rescheduleDate">日付</Label>
-                      <Input
-                        id="rescheduleDate"
-                        type="date"
-                        value={reschedule.date}
-                        onChange={(event) => setReschedule((prev) => ({ ...prev, date: event.target.value, timeSlot: "" }))}
-                        className="mt-2"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="rescheduleTime">開始時刻</Label>
-                      <Input
-                        id="rescheduleTime"
-                        type="time"
-                        step={60}
-                        value={reschedule.timeSlot}
-                        onChange={(event) => setReschedule((prev) => ({ ...prev, timeSlot: event.target.value }))}
-                        className="mt-2"
-                      />
-                    </div>
+                  <div className="mt-3 space-y-3">
+                    <BookingSlotPicker
+                      bookingType={selectedRecord.bookingType}
+                      date={reschedule.date ? parse(reschedule.date, "yyyy-MM-dd", new Date()) : undefined}
+                      onDateChange={(date) =>
+                        setReschedule((prev) => ({ ...prev, date: date ? format(date, "yyyy-MM-dd") : "", timeSlot: "" }))
+                      }
+                      timeSlot={reschedule.timeSlot}
+                      onTimeSlotChange={(slot) => setReschedule((prev) => ({ ...prev, timeSlot: slot }))}
+                      refreshKey={`${selectedRecord.date} ${selectedRecord.timeSlot}`}
+                      name="admin-reschedule-time-slot"
+                    />
                   </div>
-
-                  {reschedule.date && (
-                    <div className="mt-3">
-                      <p className="text-xs text-muted-foreground">
-                        {rescheduleSlotsLoading
-                          ? "空き枠を確認中..."
-                          : rescheduleSlots.length > 0
-                            ? "空いている枠（クリックで選択）"
-                            : "受付中の空き枠はありません。開始時刻を直接入力することもできます。"}
-                      </p>
-                      {!rescheduleSlotsLoading && rescheduleSlots.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {rescheduleSlots.map((slot) => (
-                            <Button
-                              key={slot}
-                              type="button"
-                              size="sm"
-                              variant={reschedule.timeSlot === slot ? "default" : "outline"}
-                              onClick={() => setReschedule((prev) => ({ ...prev, timeSlot: slot }))}
-                            >
-                              {slot}
-                            </Button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
 
                   <div className="mt-3 space-y-2 text-sm">
                     <label className="flex items-center gap-2">

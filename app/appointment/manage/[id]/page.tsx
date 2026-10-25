@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar } from "@/components/ui/calendar"
 import { BookingCompletionScreen } from "@/components/booking-completion-screen"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import {
@@ -23,6 +22,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { CopyBookingIdButton } from "@/components/copy-booking-id-button"
+import { BookingSlotPicker, formatSlotRange } from "@/components/booking-slot-picker"
 
 interface ManageRecord {
   id: string
@@ -42,21 +42,6 @@ interface ManageRecord {
 
 type Step = "loading" | "set-password" | "login" | "manage" | "error"
 
-function formatSlotRange(slot: string): string {
-  const start = new Date(`2000-01-01T${slot}:00+09:00`)
-  const end = new Date(start.getTime() + 60 * 60 * 1000)
-  const endText = `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`
-  return `${slot} - ${endText}`
-}
-
-function buildFallbackSlots(date: string, bookingType: "meet" | "対面"): string[] {
-  const threshold = bookingType === "meet" ? Date.now() + 60 * 60 * 1000 : Date.now()
-  return Array.from({ length: 14 }, (_, idx) => `${String(10 + idx).padStart(2, "0")}:00`).filter((slot) => {
-    const slotStart = new Date(`${date}T${slot}:00+09:00`)
-    return slotStart.getTime() > threshold
-  })
-}
-
 function formatBookingDate(date: string): string {
   const parsed = new Date(`${date}T00:00:00+09:00`)
   if (Number.isNaN(parsed.getTime())) return date
@@ -75,8 +60,6 @@ export default function ManageBookingPage() {
   const [newPassword, setNewPassword] = useState("")
   const [record, setRecord] = useState<ManageRecord | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
-  const [availableSlots, setAvailableSlots] = useState<string[]>([])
-  const [loadingSlots, setLoadingSlots] = useState(false)
   const [actionLoading, setActionLoading] = useState<"update" | "cancel" | null>(null)
   const [completion, setCompletion] = useState<{
     title: string
@@ -106,7 +89,6 @@ export default function ManageBookingPage() {
       company: nextRecord.company || "",
       agenda: nextRecord.agenda,
     })
-    await loadAvailability(nextRecord.date)
     setStep("manage")
     setMessage("")
   }
@@ -146,28 +128,10 @@ export default function ManageBookingPage() {
     bootstrap()
   }, [token, params.id])
 
-  const loadAvailability = async (dateStr: string) => {
-    setLoadingSlots(true)
-    try {
-      const response = await fetch(`/api/bookings?date=${dateStr}&bookingType=${encodeURIComponent(record?.bookingType || "meet")}`)
-      const json = await response.json()
-      const fromApi = response.ok && json.ok && Array.isArray(json.slots)
-        ? (json.slots as string[])
-        : buildFallbackSlots(dateStr, record?.bookingType || "meet")
-      setAvailableSlots(Array.from(new Set(fromApi)))
-    } catch {
-      const fallback = buildFallbackSlots(dateStr, record?.bookingType || "meet")
-      setAvailableSlots(Array.from(new Set(fallback)))
-    } finally {
-      setLoadingSlots(false)
-    }
-  }
-
   useEffect(() => {
     if (!selectedDate || step !== "manage") return
     const dateStr = format(selectedDate, "yyyy-MM-dd")
     setForm((prev) => ({ ...prev, date: dateStr, timeSlot: "" }))
-    void loadAvailability(dateStr)
   }, [selectedDate, step, record?.timeSlot])
 
   const onLogin = async () => {
@@ -393,40 +357,17 @@ export default function ManageBookingPage() {
                 <AccordionItem value="manage-form" className="border-none">
                   <AccordionTrigger className="text-base hover:no-underline">変更やキャンセルはこちら</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-1">
-                    <div className="rounded-lg border border-border p-3">
-                      <Label>日付選択</Label>
-                      <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={setSelectedDate}
-                        locale={ja}
-                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                        className="mt-2"
+                    {record && (
+                      <BookingSlotPicker
+                        bookingType={record.bookingType}
+                        date={selectedDate}
+                        onDateChange={setSelectedDate}
+                        timeSlot={form.timeSlot}
+                        onTimeSlotChange={(slot) => setForm((prev) => ({ ...prev, timeSlot: slot }))}
+                        refreshKey={record.timeSlot}
+                        name="manage-time-slot"
                       />
-                    </div>
-
-                    <div className="rounded-lg border border-border p-3">
-                      <Label>時間帯選択</Label>
-                      {loadingSlots ? (
-                        <p className="mt-2 text-sm text-muted-foreground">空き時間を照会中...</p>
-                      ) : availableSlots.length > 0 ? (
-                        <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
-                          {availableSlots.map((slot) => (
-                            <label key={slot} className="flex cursor-pointer items-center gap-2 rounded-md border border-border p-2">
-                              <input
-                                type="radio"
-                                name="manage-time-slot"
-                                checked={form.timeSlot === slot}
-                                onChange={() => setForm((prev) => ({ ...prev, timeSlot: slot }))}
-                              />
-                              <span>{formatSlotRange(slot)}</span>
-                            </label>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="mt-2 text-sm text-muted-foreground">選択日の空き時間がありません。</p>
-                      )}
-                    </div>
+                    )}
 
                     {showLocation && (
                       <div>
