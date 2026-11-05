@@ -1,14 +1,18 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Inter, JetBrains_Mono, Noto_Sans_JP } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Navigation } from "@/components/navigation"
 import { FirstVisitLoader } from "@/components/first-visit-loader"
 import { CtrlCTerminalShortcut } from "@/components/ctrl-c-terminal-shortcut"
 import { Toaster } from "@/components/ui/toaster"
+import { SiteFooter } from "@/components/site-footer"
 
-const inter = Inter({ subsets: ["latin"] })
+// 欧文は Inter、和文は Noto Sans JP、ターミナル部分は JetBrains Mono（罫線文字の ASCII ロゴも崩れない）
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" })
+const notoSansJp = Noto_Sans_JP({ subsets: ["latin"], variable: "--font-jp", display: "swap", preload: false })
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" })
 
 export const metadata: Metadata = {
   title: "DOKKIITECH",
@@ -68,12 +72,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${inter.variable} ${notoSansJp.variable} ${jetbrainsMono.variable}`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange storageKey="dokkiitech-theme">
           <FirstVisitLoader />
           <CtrlCTerminalShortcut />
           <Navigation />
           <div className="pt-16">{children}</div>
+          <SiteFooter />
           <Toaster />
         </ThemeProvider>
       </body>
