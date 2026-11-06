@@ -460,7 +460,7 @@ export default function AppointPage() {
                         )
                       })}
                     </div>
-                    {errors.bookingType && <p className="text-sm text-red-300">{errors.bookingType.message}</p>}
+                    {errors.bookingType && <p className="text-sm text-red-800">{errors.bookingType.message}</p>}
 
                     {showLocation && (
                       <div>
@@ -471,7 +471,7 @@ export default function AppointPage() {
                           {...register("location")}
                           className="mt-2"
                         />
-                        {errors.location && <p className="mt-1 text-sm text-red-300">{errors.location.message}</p>}
+                        {errors.location && <p className="mt-1 text-sm text-red-800">{errors.location.message}</p>}
                       </div>
                     )}
                   </div>
@@ -511,7 +511,7 @@ export default function AppointPage() {
                         "日付を選択してください。"
                       )}
                     </p>
-                    {errors.date && <p className="mt-1 text-sm text-red-300">{errors.date.message}</p>}
+                    {errors.date && <p className="mt-1 text-sm text-red-800">{errors.date.message}</p>}
                   </div>
                 )}
 
@@ -547,11 +547,11 @@ export default function AppointPage() {
                         })}
                       </div>
                     ) : (
-                      <p className="mt-4 text-sm text-amber-300">
+                      <p className="mt-4 text-sm text-amber-800">
                         {slotNotice || "この日は空き時間がありません。前のステップから別の日付を選択してください。"}
                       </p>
                     )}
-                    {errors.timeSlot && <p className="mt-3 text-sm text-red-300">{errors.timeSlot.message}</p>}
+                    {errors.timeSlot && <p className="mt-3 text-sm text-red-800">{errors.timeSlot.message}</p>}
                   </div>
                 )}
 
@@ -560,12 +560,12 @@ export default function AppointPage() {
                     <div>
                       <Label htmlFor="name">お名前</Label>
                       <Input id="name" autoComplete="name" {...register("name")} className="mt-2" />
-                      {errors.name && <p className="mt-1 text-sm text-red-300">{errors.name.message}</p>}
+                      {errors.name && <p className="mt-1 text-sm text-red-800">{errors.name.message}</p>}
                     </div>
                     <div>
                       <Label htmlFor="email">メールアドレス</Label>
                       <Input id="email" type="email" autoComplete="email" {...register("email")} className="mt-2" />
-                      {errors.email && <p className="mt-1 text-sm text-red-300">{errors.email.message}</p>}
+                      {errors.email && <p className="mt-1 text-sm text-red-800">{errors.email.message}</p>}
                     </div>
                     <div>
                       <Label htmlFor="company">会社名（任意）</Label>
@@ -584,7 +584,7 @@ export default function AppointPage() {
                       {...register("agenda")}
                       className="mt-2"
                     />
-                    {errors.agenda && <p className="mt-1 text-sm text-red-300">{errors.agenda.message}</p>}
+                    {errors.agenda && <p className="mt-1 text-sm text-red-800">{errors.agenda.message}</p>}
                   </div>
                 )}
 

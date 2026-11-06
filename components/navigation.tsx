@@ -1,110 +1,111 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { Menu, X } from "lucide-react"
+import { navigation } from "@/lib/site-nav"
 
-const navigation = [
-  { name: "ホーム", href: "/" },
-  { name: "プロフィール", href: "/profile" },
-  { name: "ブログ", href: "/blog" },
-  { name: "Product", href: "/products" },
-  { name: "SNS", href: "/contact" },
-  { name: "お打ち合わせの予約", href: "/appointment" },
-]
+
+function isCurrent(pathname: string, href: string) {
+  if (href.startsWith("/#")) return false
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
 
+  useEffect(() => {
+    setIsOpen(false)
+  }, [pathname])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsOpen(false)
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [isOpen])
+
   return (
-    <>
-      <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            {/* ロゴ */}
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-                {"<>"}
-              </span>
-              <span className="font-bold text-lg">dokkiitech.com</span>
-            </Link>
+    <header className="fixed top-0 z-50 w-full border-b border-gray-200 bg-white">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-4 md:px-8">
+        <Link href="/" className="flex shrink-0 items-center" aria-label="DOKKIITECH トップページ">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/logo-horizontal.svg" alt="DOKKIITECH" width={196} height={36} className="h-8 w-auto md:h-9" />
+        </Link>
 
-            {/* デスクトップナビゲーション */}
-            <div className="hidden md:flex items-center space-x-1">
-              {navigation.map((item) => (
-                <Button
-                  key={item.name}
-                  variant={pathname === item.href ? "default" : "ghost"}
-                  className="rounded-full"
-                  asChild
-                >
-                  <Link href={item.href}>{item.name}</Link>
-                </Button>
-              ))}
-            </div>
+        <nav aria-label="グローバルナビゲーション" className="hidden lg:block">
+          <ul className="flex items-center gap-1">
+            {navigation.map((item) => {
+              const current = isCurrent(pathname, item.href)
+              return (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    aria-current={current ? "page" : undefined}
+                    className={`relative block rounded px-3 py-2 text-[0.9375rem] font-bold hover:text-brand hover:underline hover:underline-offset-4 ${
+                      current
+                        ? "text-brand after:absolute after:inset-x-3 after:-bottom-[13px] after:h-1 after:bg-brand"
+                        : "text-gray-900"
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        </nav>
 
-            {/* 右側のボタン */}
-            <div className="flex items-center space-x-2">
-              <ThemeToggle />
-
-              {/* モバイルメニューボタン */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20 transition-all duration-300 hover:scale-105"
-                onClick={() => setIsOpen(!isOpen)}
-                aria-label={isOpen ? "メニューを閉じる" : "メニューを開く"}
-              >
-                {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* フルスクリーンモバイルメニュー */}
-      <div
-        className={`fixed inset-0 z-40 md:hidden transition-all duration-300 ease-in-out ${
-          isOpen ? "opacity-100 visible" : "opacity-0 invisible"
-        }`}
-      >
-        {/* 背景オーバーレイ */}
-        <div className="absolute inset-0 bg-background/95 backdrop-blur-lg" onClick={() => setIsOpen(false)} />
-
-        {/* メニューコンテンツ */}
-        <div className="relative flex flex-col items-center justify-center h-full px-8">
-
-          {/* ナビゲーションリンク */}
-          <div className="flex flex-col items-center space-y-6">
-            {navigation.map((item, index) => (
-              <div
-                key={item.name}
-                className={`transition-all duration-500 ${
-                  isOpen ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-                }`}
-                style={{
-                  transitionDelay: `${index * 100}ms`,
-                }}
-              >
-                <Button
-                  variant={pathname === item.href ? "default" : "ghost"}
-                  size="lg"
-                  className="text-2xl py-6 px-8 rounded-full min-w-[200px] bg-gradient-to-r from-blue-500/5 to-purple-500/5 hover:from-blue-500/20 hover:to-purple-500/20 transition-all duration-300 hover:scale-105"
-                  asChild
-                  onClick={() => setIsOpen(false)}
-                >
-                  <Link href={item.href}>{item.name}</Link>
-                </Button>
-              </div>
-            ))}
-          </div>
-
+        <div className="flex items-center gap-2">
+          <Link href="/appointment" className="btn-primary hidden !min-h-10 !px-4 !py-2 text-[0.9375rem] sm:inline-flex">
+            無料相談を予約
+          </Link>
+          <button
+            type="button"
+            className="inline-flex min-h-11 min-w-11 flex-col items-center justify-center rounded border border-transparent px-2 text-gray-900 hover:bg-gray-50 lg:hidden"
+            onClick={() => setIsOpen((open) => !open)}
+            aria-expanded={isOpen}
+            aria-controls="mobile-menu"
+          >
+            {isOpen ? <X className="h-6 w-6" aria-hidden /> : <Menu className="h-6 w-6" aria-hidden />}
+            <span className="text-[0.625rem] font-bold leading-none">{isOpen ? "閉じる" : "メニュー"}</span>
+          </button>
         </div>
       </div>
-    </>
+
+      <div
+        id="mobile-menu"
+        hidden={!isOpen}
+        className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-gray-200 bg-white lg:hidden"
+      >
+        <nav aria-label="モバイルナビゲーション" className="mx-auto max-w-7xl px-4 pb-6 pt-2">
+          <ul className="divide-y divide-gray-200">
+            <li>
+              <Link href="/" className="block py-4 text-base font-bold text-gray-900 hover:text-brand">
+                トップ
+              </Link>
+            </li>
+            {navigation.map((item) => (
+              <li key={item.name}>
+                <Link
+                  href={item.href}
+                  aria-current={isCurrent(pathname, item.href) ? "page" : undefined}
+                  className="block py-4 text-base font-bold text-gray-900 hover:text-brand aria-[current=page]:text-brand"
+                >
+                  {item.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <Link href="/appointment" className="btn-primary mt-4 w-full">
+            無料相談を予約
+          </Link>
+        </nav>
+      </div>
+    </header>
   )
 }

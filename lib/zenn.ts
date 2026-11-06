@@ -99,8 +99,9 @@ function parseRSSFeed(xml: string): ZennArticle[] {
     const description = extractTag(item, 'description')
 
     // サムネイル画像を抽出（og:imageから）
-    const thumbnailMatch = item.match(/<media:thumbnail url="([^"]+)"/)
-    const thumbnail = thumbnailMatch ? thumbnailMatch[1] : undefined
+    // Zenn の RSS は OGP 画像を <enclosure> で配信している
+    const thumbnailMatch = item.match(/<media:thumbnail url="([^"]+)"/) || item.match(/<enclosure url="([^"]+)"/)
+    const thumbnail = thumbnailMatch ? thumbnailMatch[1].replace(/&amp;/g, "&") : undefined
 
     // タグ（カテゴリ）を抽出
     const tags = extractCategories(item)
