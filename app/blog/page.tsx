@@ -1,10 +1,10 @@
 import { BlogCard } from "@/components/blog-card"
+import { PageHeader } from "@/components/page-header"
 import { getZennArticles } from "@/lib/zenn"
-import { BookOpen } from "lucide-react"
 
 export const metadata = {
-  title: "ブログ | DOKKIITECH",
-  description: "木戸亮輔のZennブログ記事一覧です。技術記事やプログラミングに関する情報を発信しています。",
+  title: "技術ブログ",
+  description: "dokkiitech 代表 木戸亮輔が Zenn で公開している技術記事の一覧です。",
 }
 
 export default async function BlogPage() {
@@ -12,48 +12,30 @@ export default async function BlogPage() {
   const articles = await getZennArticles(username)
 
   return (
-    <main className="min-h-screen">
-      <div className="container mx-auto px-4 py-16">
-        {/* ヘッダーセクション */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-            <BookOpen className="w-8 h-8 text-primary" />
-          </div>
-          <h1 className="text-4xl font-bold mb-4">ブログ</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Zennで技術記事を投稿しています。プログラミング、開発ツール、技術トレンドなどについて書いています。
-          </p>
-          <a
-            href={`https://zenn.dev/${username}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block mt-4 text-primary hover:underline"
-          >
-            Zennプロフィールを見る →
-          </a>
-        </div>
-
-        {/* 記事一覧 */}
+    <main>
+      <PageHeader
+        eyebrow="Blog"
+        title="技術ブログ"
+        lead="開発や運用で得た知見を Zenn で発信しています。"
+        image="/images/site/service-dx.webp"
+      />
+      <section className="mx-auto max-w-7xl px-4 py-16 md:px-8 md:py-20">
         {articles.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {articles.map((article) => (
-              <BlogCard key={article.link} article={article} />
+              <BlogCard key={article.link} article={article} headingLevel="h2" fallbackImage="/images/site/service-dx.webp" />
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">記事を読み込めませんでした。</p>
-            <a
-              href={`https://zenn.dev/${username}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block mt-4 text-primary hover:underline"
-            >
-              Zennで直接記事を読む →
-            </a>
-          </div>
+          <p className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center text-gray-700">記事を読み込めませんでした。</p>
         )}
-      </div>
+        <p className="mt-10 text-center">
+          <a href={`https://zenn.dev/${username}`} target="_blank" rel="noopener noreferrer" className="btn-secondary">
+            Zenn のプロフィールを見る
+            <span className="sr-only">（新しいタブで開きます）</span>
+          </a>
+        </p>
+      </section>
     </main>
   )
 }

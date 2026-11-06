@@ -2,50 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * デザイントークン
+ * デジタル庁デザインシステム（DADS, @digital-go-jp/design-tokens 2.1.0）の
+ * グレースケール・余白・角丸・フォーカス表現をベースに、キーカラーだけを
+ * ロゴの赤（#D22D4C）と黒に置き換えている。DADS はライトテーマのみ定義のため
+ * サイト全体をライト単一テーマで運用する。
+ */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.75rem;
-  }
+    color-scheme: light;
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
+    /* ブランド（ロゴから採色） */
+    --brand-red: #d22d4c;        /* key-900 相当。白地とのコントラスト 4.9:1 */
+    --brand-red-dark: #a8203a;   /* hover / pressed */
+    --brand-red-darker: #7e1529;
+    --brand-red-50: #fdeef1;
+    --brand-red-100: #f9d5dc;
+    --brand-black: #000000;
+
+    /* DADS primitive gray */
+    --gray-50: #f2f2f2;
+    --gray-100: #e6e6e6;
+    --gray-200: #cccccc;
+    --gray-420: #949494;
+    --gray-536: #767676;
+    --gray-600: #666666;
+    --gray-700: #4d4d4d;
+    --gray-800: #333333;
+    --gray-900: #1a1a1a;
+    --focus-yellow: #ffd43d;
+
+    /* shadcn/ui 互換（HSL）。既存の予約画面などもこの値で DADS 寄りの見た目になる */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 349 65% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 10%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 30%;
+    --accent: 349 82% 96%;
+    --accent-foreground: 349 68% 39%;
+    --destructive: 0 100% 40%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 80%;
+    --input: 0 0% 58%;
+    --ring: 0 0% 0%;
+    --radius: 0.5rem;
   }
 }
 
@@ -53,8 +61,95 @@
   * {
     @apply border-border;
   }
+  html {
+    scroll-padding-top: 5rem;
+  }
   body {
     @apply bg-background text-foreground;
+    font-size: 16px;
+    line-height: 1.7;
+    letter-spacing: 0.02em;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* DADS のフォーカスリング: 黒 4px アウトライン + 黄色のハロー */
+  :focus-visible {
+    outline: 4px solid #000 !important;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--focus-yellow) !important;
+    border-radius: 0.25rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation: none !important;
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* DADS ボタン（塗り／アウトライン）。最小高さ 48px でタップしやすく */
+  .btn-primary,
+  .btn-secondary,
+  .btn-inverse {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-lg px-6 py-3 text-base font-bold no-underline transition-colors;
+  }
+  .btn-primary {
+    background: var(--brand-red);
+    color: #fff;
+  }
+  .btn-primary:hover {
+    background: var(--brand-red-dark);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .btn-secondary {
+    border: 1px solid var(--brand-red);
+    background: #fff;
+    color: var(--brand-red);
+  }
+  .btn-secondary:hover {
+    background: var(--brand-red-50);
+    color: var(--brand-red-dark);
+    border-color: var(--brand-red-dark);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .btn-inverse {
+    background: #fff;
+    color: var(--gray-900);
+  }
+  .btn-inverse:hover {
+    background: var(--gray-100);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* DADS テキストリンク */
+  .text-link {
+    color: var(--brand-red);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .text-link:hover {
+    color: var(--brand-red-dark);
+    text-decoration-thickness: 3px;
+  }
+
+  .section-eyebrow {
+    @apply text-sm font-bold uppercase tracking-[0.12em];
+    color: var(--brand-red);
+  }
+  .section-title {
+    @apply text-[1.75rem] font-bold leading-[1.4] md:text-4xl md:leading-[1.4];
+    color: var(--gray-900);
+    letter-spacing: 0.02em;
+  }
+  .section-lead {
+    @apply mt-4 max-w-3xl text-base leading-[1.8] md:text-lg;
+    color: var(--gray-700);
   }
 }
 

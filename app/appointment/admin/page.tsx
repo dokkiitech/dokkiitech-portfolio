@@ -69,9 +69,9 @@ function formatStatus(value: BookingStatus): string {
 }
 
 function getStatusClassName(value: BookingStatus): string {
-  if (value === "active") return "border-emerald-400/30 bg-emerald-500/15 text-emerald-200"
-  if (value === "canceled") return "border-rose-400/30 bg-rose-500/15 text-rose-200"
-  return "border-slate-300/30 bg-slate-500/15 text-slate-200"
+  if (value === "active") return "border-emerald-600/30 bg-emerald-50 text-emerald-800"
+  if (value === "canceled") return "border-rose-400/30 bg-rose-500/15 text-rose-800"
+  return "border-slate-300 bg-slate-100 text-slate-800"
 }
 
 function sameDate(date: Date | undefined, key: string): boolean {
@@ -240,7 +240,7 @@ export default function AppointmentAdminPage() {
         <div className="rounded-3xl border border-border bg-card/95 p-6 shadow-sm sm:p-8">
           <div className="flex flex-col gap-3 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-sm text-cyan-300">管理者向け</p>
+              <p className="text-sm text-brand-dark">管理者向け</p>
               <h1 className="text-3xl font-bold">予約管理</h1>
               <p className="mt-2 text-sm text-muted-foreground">
                 一覧表示とカレンダービューを切り替えながら、予約番号ベースで確認できます。
@@ -321,8 +321,8 @@ export default function AppointmentAdminPage() {
             </AccordionItem>
           </Accordion>
 
-          {message && <p className="mt-4 whitespace-pre-line text-sm text-rose-300">{message}</p>}
-          {mtgSummaryMessage && <p className="mt-4 whitespace-pre-line text-sm text-cyan-200">{mtgSummaryMessage}</p>}
+          {message && <p className="mt-4 whitespace-pre-line text-sm text-rose-800">{message}</p>}
+          {mtgSummaryMessage && <p className="mt-4 whitespace-pre-line text-sm text-brand-dark">{mtgSummaryMessage}</p>}
 
           <Tabs defaultValue="list" className="mt-6">
             <TabsList>
@@ -387,7 +387,7 @@ export default function AppointmentAdminPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="font-mono text-xs text-cyan-300">{record.bookingId}</p>
+                          <p className="font-mono text-xs text-brand-dark">{record.bookingId}</p>
                           <CopyBookingIdButton bookingId={record.bookingId} size="icon" className="h-7 w-7 shrink-0" />
                         </div>
                         <h2 className="mt-1 font-semibold">{record.name}</h2>
@@ -435,8 +435,8 @@ export default function AppointmentAdminPage() {
                         .map((record) => new Date(`${record.date}T00:00:00+09:00`)),
                     }}
                     modifiersClassNames={{
-                      booked: "bg-cyan-500/15 text-cyan-100 font-semibold",
-                      selectedBooked: "bg-cyan-500 text-black hover:bg-cyan-400",
+                      booked: "bg-brand-50 text-brand-dark font-semibold",
+                      selectedBooked: "bg-brand text-white hover:bg-brand-dark",
                     }}
                     className="mx-auto"
                   />
@@ -456,7 +456,7 @@ export default function AppointmentAdminPage() {
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <div className="flex items-center gap-2">
-                              <p className="font-mono text-xs text-cyan-300">{record.bookingId}</p>
+                              <p className="font-mono text-xs text-brand-dark">{record.bookingId}</p>
                               <CopyBookingIdButton bookingId={record.bookingId} size="icon" className="h-7 w-7 shrink-0" />
                             </div>
                             <p className="mt-1 font-medium">{record.name}</p>
@@ -538,7 +538,7 @@ export default function AppointmentAdminPage() {
               )}
 
               {selectedRecord.status === "active" ? (
-                <div className="rounded-xl border border-cyan-400/30 bg-cyan-500/5 p-4">
+                <div className="rounded-xl border border-brand-100 bg-brand-50 p-4">
                   <p className="text-sm font-medium">日時を変更</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Googleカレンダーの予定とMeetも新しい日時に更新されます。
@@ -581,7 +581,7 @@ export default function AppointmentAdminPage() {
                   {rescheduleMessage && (
                     <p
                       className={`mt-3 whitespace-pre-line text-sm ${
-                        rescheduleMessage.type === "success" ? "text-emerald-300" : "text-rose-300"
+                        rescheduleMessage.type === "success" ? "text-emerald-800" : "text-rose-800"
                       }`}
                     >
                       {rescheduleMessage.text}
@@ -616,7 +616,7 @@ export default function AppointmentAdminPage() {
                   {selectedRecord.meetUrl && (
                     <p>
                       Meet:{" "}
-                      <a href={selectedRecord.meetUrl} target="_blank" rel="noreferrer" className="text-cyan-300 underline">
+                      <a href={selectedRecord.meetUrl} target="_blank" rel="noreferrer" className="text-brand-dark underline">
                         {selectedRecord.meetUrl}
                       </a>
                     </p>
@@ -628,7 +628,7 @@ export default function AppointmentAdminPage() {
                         href={selectedRecord.calendarEventUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-cyan-300 underline"
+                        className="text-brand-dark underline"
                       >
                         予定を開く
                       </a>

@@ -317,7 +317,7 @@ export default function ManageBookingPage() {
                 <div>
                   <h2 className="text-xl font-semibold">現在の予約状況</h2>
                   <p className="mt-1 text-sm text-muted-foreground">対象: {record.name} / {record.email}</p>
-                  <p className="mt-1 text-sm text-cyan-300">予約番号: {record.bookingId}</p>
+                  <p className="mt-1 text-sm text-brand-dark">予約番号: {record.bookingId}</p>
                 </div>
                 <CopyBookingIdButton bookingId={record.bookingId} className="w-full sm:w-auto" />
               </div>

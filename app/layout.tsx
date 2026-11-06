@@ -1,22 +1,33 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Noto_Sans_JP } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Navigation } from "@/components/navigation"
-import { FirstVisitLoader } from "@/components/first-visit-loader"
-import { CtrlCTerminalShortcut } from "@/components/ctrl-c-terminal-shortcut"
+import { SiteFooter } from "@/components/site-footer"
 import { Toaster } from "@/components/ui/toaster"
 
-const inter = Inter({ subsets: ["latin"] })
+const notoSansJp = Noto_Sans_JP({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  display: "swap",
+  variable: "--font-noto-sans-jp",
+})
+
+const siteTitle = "DOKKIITECH｜北九州のWeb開発・クラウド構築"
+const siteDescription =
+  "dokkiitech（ドッキーテック）は北九州市を拠点に、Webサイト・Webアプリ開発、AWSなどのクラウド構築、業務の自動化を小さく始めて育てるIT事業者です。オンライン・対面でのご相談を受け付けています。"
 
 export const metadata: Metadata = {
-  title: "DOKKIITECH",
-  description: "木戸亮輔(dokkiitech)のポートフォリオサイトです。ターミナルUIを採用した楽しいポートフォリオを皆様に提供しています。木戸亮輔について知れることはもちろん、お打ち合わせのご予約もこちらから行なっていただけます。",
+  title: {
+    default: siteTitle,
+    template: "%s｜DOKKIITECH",
+  },
+  description: siteDescription,
   metadataBase: new URL("https://www.dokkiitech.com"),
   openGraph: {
-    title: "DOKKIITECH",
-    description: "木戸亮輔(dokkiitech)のポートフォリオサイトです。ターミナルUIを採用した楽しいポートフォリオを皆様に提供しています。木戸亮輔について知れることはもちろん、お打ち合わせのご予約もこちらから行なっていただけます。",
+    title: siteTitle,
+    description: siteDescription,
     url: "https://www.dokkiitech.com",
     siteName: "DOKKIITECH",
     locale: "ja_JP",
@@ -31,8 +42,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "DOKKIITECH",
-    description: "木戸亮輔(dokkiitech)のポートフォリオサイトです。ターミナルUIを採用した楽しいポートフォリオを皆様に提供しています。木戸亮輔について知れることはもちろん、お打ち合わせのご予約もこちらから行なっていただけます。",
+    title: siteTitle,
+    description: siteDescription,
     images: ["/ogp.PNG"],
   },
   manifest: '/site.webmanifest',
@@ -58,7 +69,6 @@ export const metadata: Metadata = {
       },
     ],
   },
-  generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -68,12 +78,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange storageKey="dokkiitech-theme">
-          <FirstVisitLoader />
-          <CtrlCTerminalShortcut />
+      <body className={`${notoSansJp.variable} font-sans`}>
+        <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" enableSystem={false} disableTransitionOnChange storageKey="dokkiitech-theme">
+          <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded focus:bg-white focus:px-4 focus:py-2">
+            本文へ移動
+          </a>
           <Navigation />
-          <div className="pt-16">{children}</div>
+          <div id="main" className="pt-16">{children}</div>
+          <SiteFooter />
           <Toaster />
         </ThemeProvider>
       </body>

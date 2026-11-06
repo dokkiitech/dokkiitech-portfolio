@@ -19,7 +19,28 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-noto-sans-jp)", "Hiragino Sans", "Yu Gothic", "Meiryo", "sans-serif"],
+      },
       colors: {
+        brand: {
+          DEFAULT: "var(--brand-red)",
+          dark: "var(--brand-red-dark)",
+          darker: "var(--brand-red-darker)",
+          50: "var(--brand-red-50)",
+          100: "var(--brand-red-100)",
+        },
+        gray: {
+          50: "var(--gray-50)",
+          100: "var(--gray-100)",
+          200: "var(--gray-200)",
+          400: "var(--gray-420)",
+          500: "var(--gray-536)",
+          600: "var(--gray-600)",
+          700: "var(--gray-700)",
+          800: "var(--gray-800)",
+          900: "var(--gray-900)",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
